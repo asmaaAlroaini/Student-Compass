@@ -4,11 +4,9 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { X, BookOpen, Loader2 } from 'lucide-react';
 import type { Subject, SubjectFormData } from '../types/subject.types';
 import { subjectSchema, type SubjectSchemaOutput } from '../validations/subjectSchema';
+import { useAcademicOptions } from '@/features/academic-structure/hooks/useAcademicStructure';
 
-// ── Educational Options (matching backend) ──
-const GRADE_LEVELS = ['الثالث الثانوي', 'الثاني الثانوي', 'الأول الثانوي'];
-const TRACKS = ['علمي', 'أدبي', 'عام'];
-const SUBJECT_ICONS = ['📘', '📗', '📕', '📙', '🔬', '⚗️', '🧮', '🗺️', '📐', '📏', '🧲', '💻', '🌍', '🎨', '📜'];
+const SUBJECT_ICONS = ['📘', '📗', '📕', '📙', '🔬', '⚗️', '🧮', '🗺️', '📐', '📏', '🧲', '💻', '🌍', '🎨', '📜', '⚖️', '💡', '🧪'];
 
 interface SubjectFormModalProps {
   open: boolean;
@@ -16,6 +14,8 @@ interface SubjectFormModalProps {
   isSubmitting: boolean;
   onClose: () => void;
   onSubmit: (data: SubjectFormData) => void;
+  defaultGrade?: string;
+  defaultTrack?: string;
 }
 
 const defaultValues: SubjectSchemaOutput = {
@@ -33,8 +33,17 @@ export function SubjectFormModal({
   isSubmitting,
   onClose,
   onSubmit,
+  defaultGrade,
+  defaultTrack,
 }: SubjectFormModalProps) {
   const isEdit = !!subject;
+  const { data: academicData } = useAcademicOptions();
+
+  const gradeLevels = academicData?.data?.grade_levels ?? [
+    { id: 'الثالث الثانوي', name: 'الثالث الثانوي', tracks: ['علمي', 'أدبي'] },
+    { id: 'الثاني الثانوي', name: 'الثاني الثانوي', tracks: ['علمي', 'أدبي'] },
+    { id: 'الأول الثانوي', name: 'الأول الثانوي', tracks: ['عام'] },
+  ];
 
   const {
     register,
@@ -45,11 +54,20 @@ export function SubjectFormModal({
     formState: { errors },
   } = useForm({
     resolver: zodResolver(subjectSchema),
-    defaultValues,
+    defaultValues: {
+      ...defaultValues,
+      grade_level: defaultGrade || '',
+      track: defaultTrack || '',
+    },
   });
 
   const selectedIcon = watch('icon');
   const isActive = watch('is_active');
+  const selectedGrade = watch('grade_level');
+
+  // المسارات المتاحة بناءً على الصف الدراسي المختار
+  const currentGradeObj = gradeLevels.find((g) => g.name === selectedGrade || g.id === selectedGrade);
+  const availableTracks = currentGradeObj?.tracks ?? ['علمي', 'أدبي', 'عام'];
 
   // Populate form when editing or resetting
   useEffect(() => {
@@ -57,15 +75,19 @@ export function SubjectFormModal({
       reset({
         name: subject.name,
         code: subject.code ?? '',
-        grade_level: subject.grade_level ?? '',
-        track: subject.track ?? '',
+        grade_level: subject.grade_level ?? defaultGrade ?? '',
+        track: subject.track ?? defaultTrack ?? '',
         icon: subject.icon ?? '📘',
         is_active: subject.is_active,
       });
     } else {
-      reset(defaultValues);
+      reset({
+        ...defaultValues,
+        grade_level: defaultGrade ?? '',
+        track: defaultTrack ?? '',
+      });
     }
-  }, [subject, open, reset]);
+  }, [subject, open, reset, defaultGrade, defaultTrack]);
 
   if (!open) return null;
 
@@ -84,32 +106,32 @@ export function SubjectFormModal({
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4" dir="rtl">
       {/* Backdrop */}
       <div
-        className="absolute inset-0 bg-black/70 backdrop-blur-sm"
+        className="absolute inset-0 bg-black/60 backdrop-blur-sm transition-opacity"
         onClick={onClose}
       />
 
       {/* Panel */}
-      <div className="relative w-full max-w-lg bg-[#0d1632] border border-white/[0.09] rounded-3xl shadow-2xl overflow-hidden">
+      <div className="relative w-full max-w-lg bg-card text-card-foreground border border-border rounded-3xl shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
 
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-white/[0.07] bg-gradient-to-l from-blue-500/5 to-transparent">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-border bg-muted/30">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-2xl bg-blue-500/15 border border-blue-500/25 flex items-center justify-center text-lg">
+            <div className="w-10 h-10 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center text-xl">
               {selectedIcon || '📘'}
             </div>
             <div>
-              <h2 className="text-sm font-bold text-white">
+              <h2 className="text-base font-bold text-foreground">
                 {isEdit ? 'تعديل المادة الدراسية' : 'إضافة مادة دراسية جديدة'}
               </h2>
-              <p className="text-[11px] text-slate-400">
-                {isEdit ? `تعديل: ${subject?.name}` : 'أدخل بيانات المادة الجديدة مع التحقق التلقائي'}
+              <p className="text-xs text-muted-foreground">
+                {isEdit ? `تعديل بيانات: ${subject?.name}` : 'حدد الصف الدراسي والمسار وبيانات المادة'}
               </p>
             </div>
           </div>
           <button
             type="button"
             onClick={onClose}
-            className="p-2 rounded-xl bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white transition-all cursor-pointer"
+            className="p-2 rounded-xl text-muted-foreground hover:text-foreground hover:bg-muted transition-all cursor-pointer"
           >
             <X className="w-4 h-4" />
           </button>
@@ -120,124 +142,138 @@ export function SubjectFormModal({
 
           {/* Name */}
           <div className="space-y-1.5">
-            <label className="text-xs font-semibold text-slate-300">
-              اسم المادة <span className="text-rose-400">*</span>
+            <label className="text-xs font-semibold text-foreground">
+              اسم المادة <span className="text-destructive">*</span>
             </label>
             <input
               {...register('name')}
               type="text"
-              placeholder="مثال: الفيزياء — الثالث الثانوي العلمي"
-              className={`w-full px-4 py-2.5 rounded-xl bg-[#0b1226] border text-sm text-white placeholder:text-slate-500 focus:outline-none transition-all ${
+              placeholder="مثال: الرياضيات (التفاضل والتكامل)"
+              className={`w-full px-4 py-2.5 rounded-xl bg-background border text-sm text-foreground placeholder:text-muted-foreground focus:outline-none transition-all ${
                 errors.name
-                  ? 'border-rose-500/60 focus:border-rose-500 focus:ring-1 focus:ring-rose-500/30'
-                  : 'border-white/[0.08] focus:border-blue-500/60 focus:ring-1 focus:ring-blue-500/30'
+                  ? 'border-destructive focus:ring-2 focus:ring-destructive/20'
+                  : 'border-input focus:border-primary focus:ring-2 focus:ring-primary/20'
               }`}
               dir="rtl"
             />
             {errors.name && (
-              <p className="text-xs text-rose-400 font-medium">{errors.name.message}</p>
+              <p className="text-xs text-destructive font-medium">{errors.name.message}</p>
             )}
           </div>
 
-          {/* Code + Icon Row */}
-          <div className="grid grid-cols-2 gap-4">
+          {/* Grade Level + Track */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-slate-300">كود المادة</label>
+              <label className="text-xs font-semibold text-foreground">
+                الصف / المرحلة الدراسية <span className="text-destructive">*</span>
+              </label>
+              <select
+                {...register('grade_level')}
+                className={`w-full px-4 py-2.5 rounded-xl bg-background border text-sm text-foreground focus:outline-none transition-all cursor-pointer ${
+                  errors.grade_level
+                    ? 'border-destructive focus:ring-2 focus:ring-destructive/20'
+                    : 'border-input focus:border-primary focus:ring-2 focus:ring-primary/20'
+                }`}
+                dir="rtl"
+              >
+                <option value="">— اختر الصف الدراسي —</option>
+                {gradeLevels.map((g) => (
+                  <option key={g.id || g.name} value={g.name}>
+                    {g.name}
+                  </option>
+                ))}
+              </select>
+              {errors.grade_level && (
+                <p className="text-xs text-destructive font-medium">{errors.grade_level.message}</p>
+              )}
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="text-xs font-semibold text-foreground">المسار الدراسي</label>
+              <select
+                {...register('track')}
+                className="w-full px-4 py-2.5 rounded-xl bg-background border border-input focus:border-primary focus:ring-2 focus:ring-primary/20 text-sm text-foreground focus:outline-none transition-all cursor-pointer"
+                dir="rtl"
+              >
+                <option value="">مشترك / بدون مسار</option>
+                {availableTracks.map((t) => (
+                  <option key={t} value={t}>
+                    المسار {t}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          {/* Code + Icon Row */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="space-y-1.5">
+              <label className="text-xs font-semibold text-foreground">كود المادة (اختياري)</label>
               <input
                 {...register('code')}
                 type="text"
-                placeholder="PHY-3S"
-                className={`w-full px-4 py-2.5 rounded-xl bg-[#0b1226] border text-sm text-white placeholder:text-slate-500 focus:outline-none font-mono transition-all ${
-                  errors.code ? 'border-rose-500/60' : 'border-white/[0.08] focus:border-blue-500/60'
+                placeholder="MTH301"
+                className={`w-full px-4 py-2.5 rounded-xl bg-background border text-sm text-foreground placeholder:text-muted-foreground focus:outline-none font-mono transition-all ${
+                  errors.code
+                    ? 'border-destructive'
+                    : 'border-input focus:border-primary focus:ring-2 focus:ring-primary/20'
                 }`}
                 dir="ltr"
                 maxLength={20}
               />
               {errors.code && (
-                <p className="text-xs text-rose-400">{errors.code.message}</p>
+                <p className="text-xs text-destructive">{errors.code.message}</p>
               )}
             </div>
             <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-slate-300">الأيقونة</label>
-              <div className="relative">
-                <select
-                  {...register('icon')}
-                  className="w-full px-4 py-2.5 rounded-xl bg-[#0b1226] border border-white/[0.08] focus:border-blue-500/60 text-sm text-white focus:outline-none transition-all cursor-pointer"
-                  dir="ltr"
-                >
-                  {SUBJECT_ICONS.map((ic) => (
-                    <option key={ic} value={ic}>{ic}</option>
-                  ))}
-                </select>
-              </div>
-            </div>
-          </div>
-
-          {/* Grade Level + Track */}
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-slate-300">المرحلة الدراسية</label>
+              <label className="text-xs font-semibold text-foreground">الأيقونة</label>
               <select
-                {...register('grade_level')}
-                className="w-full px-4 py-2.5 rounded-xl bg-[#0b1226] border border-white/[0.08] focus:border-blue-500/60 text-sm text-white focus:outline-none transition-all cursor-pointer"
-                dir="rtl"
+                {...register('icon')}
+                className="w-full px-4 py-2.5 rounded-xl bg-background border border-input focus:border-primary focus:ring-2 focus:ring-primary/20 text-sm text-foreground focus:outline-none transition-all cursor-pointer"
+                dir="ltr"
               >
-                <option value="">— اختر المرحلة —</option>
-                {GRADE_LEVELS.map((g) => (
-                  <option key={g} value={g}>{g}</option>
-                ))}
-              </select>
-            </div>
-            <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-slate-300">المسار الدراسي</label>
-              <select
-                {...register('track')}
-                className="w-full px-4 py-2.5 rounded-xl bg-[#0b1226] border border-white/[0.08] focus:border-blue-500/60 text-sm text-white focus:outline-none transition-all cursor-pointer"
-                dir="rtl"
-              >
-                <option value="">— اختر المسار —</option>
-                {TRACKS.map((t) => (
-                  <option key={t} value={t}>{t}</option>
+                {SUBJECT_ICONS.map((ic) => (
+                  <option key={ic} value={ic}>{ic}</option>
                 ))}
               </select>
             </div>
           </div>
 
           {/* Active toggle */}
-          <div className="flex items-center justify-between p-4 rounded-2xl bg-white/[0.02] border border-white/[0.06]">
+          <div className="flex items-center justify-between p-4 rounded-2xl bg-muted/40 border border-border">
             <div>
-              <div className="text-sm font-semibold text-white">حالة المادة</div>
-              <div className="text-xs text-slate-400 mt-0.5">
-                {isActive ? 'المادة ظاهرة ومتاحة للطلاب' : 'المادة مخفية ولا تظهر للطلاب'}
+              <div className="text-sm font-semibold text-foreground">حالة المادة</div>
+              <div className="text-xs text-muted-foreground mt-0.5">
+                {isActive ? 'المادة مفعلة وظاهرة للطلاب' : 'المادة مخفية وموقوفة'}
               </div>
             </div>
             <button
               type="button"
               onClick={() => setValue('is_active', !isActive)}
-              className={`relative w-11 h-6 rounded-full transition-colors duration-300 cursor-pointer ${
-                isActive ? 'bg-emerald-500' : 'bg-slate-600'
+              className={`relative w-12 h-6 rounded-full transition-colors duration-300 cursor-pointer ${
+                isActive ? 'bg-emerald-500' : 'bg-muted-foreground/30'
               }`}
             >
               <span
-                className={`absolute top-0.5 w-5 h-5 rounded-full bg-white shadow-md transition-all duration-300`}
-                style={{ left: isActive ? '22px' : '2px' }}
+                className="absolute top-0.5 w-5 h-5 rounded-full bg-white shadow-md transition-all duration-300"
+                style={{ left: isActive ? '26px' : '2px' }}
               />
             </button>
           </div>
 
           {/* Actions */}
-          <div className="flex gap-3 pt-1">
+          <div className="flex gap-3 pt-2">
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 py-2.5 rounded-xl bg-white/5 hover:bg-white/10 text-slate-300 text-sm font-semibold transition-all cursor-pointer"
+              className="flex-1 py-2.5 rounded-xl bg-muted hover:bg-muted/80 text-muted-foreground hover:text-foreground text-sm font-semibold transition-all cursor-pointer"
             >
               إلغاء
             </button>
             <button
               type="submit"
               disabled={isSubmitting}
-              className="flex-1 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 disabled:opacity-60 disabled:cursor-not-allowed text-white text-sm font-bold transition-all flex items-center justify-center gap-2 shadow-lg shadow-blue-600/20 cursor-pointer"
+              className="flex-1 py-2.5 rounded-xl bg-primary hover:bg-primary-hover disabled:opacity-60 disabled:cursor-not-allowed text-primary-foreground text-sm font-bold transition-all flex items-center justify-center gap-2 shadow-lg shadow-primary/20 cursor-pointer"
             >
               {isSubmitting ? (
                 <Loader2 className="w-4 h-4 animate-spin" />

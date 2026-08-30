@@ -205,8 +205,8 @@ export default function ExamBuilderPage() {
     return (
       <div className="min-h-[400px] flex items-center justify-center">
         <div className="flex flex-col items-center gap-3">
-          <Loader2 className="w-8 h-8 text-violet-500 animate-spin" />
-          <span className="text-sm text-slate-400">جاري تحميل بيانات الامتحان...</span>
+          <Loader2 className="w-8 h-8 text-primary animate-spin" />
+          <span className="text-sm text-muted-foreground">جاري تحميل بيانات الامتحان...</span>
         </div>
       </div>
     );
@@ -220,15 +220,15 @@ export default function ExamBuilderPage() {
         <div className="flex items-center gap-3">
           <Link
             to={ROUTES.DASHBOARD.EXAMS}
-            className="p-2.5 rounded-xl bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white transition"
+            className="p-2.5 rounded-xl bg-muted hover:bg-muted/80 text-muted-foreground hover:text-foreground transition cursor-pointer"
           >
             <ArrowRight className="w-4 h-4" />
           </Link>
           <div>
-            <h1 className="text-xl font-black text-white tracking-tight">
+            <h1 className="text-xl font-black text-foreground tracking-tight">
               {isEdit ? `تعديل الامتحان #${examId}` : 'منشئ ومصمم الامتحانات الذكي'}
             </h1>
-            <p className="text-xs text-slate-400 mt-0.5">
+            <p className="text-xs text-muted-foreground mt-0.5">
               تحديد الخصائص، ربط الأسئلة من بنك الأسئلة، وتوزيع الدرجات التلقائي.
             </p>
           </div>
@@ -238,7 +238,7 @@ export default function ExamBuilderPage() {
           type="button"
           onClick={handleSubmit(onSubmit)}
           disabled={isCreating || isUpdating}
-          className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-violet-600 hover:bg-violet-500 disabled:opacity-60 text-white text-xs font-bold transition shadow-lg shadow-violet-600/20 cursor-pointer"
+          className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-primary hover:bg-primary-hover disabled:opacity-60 text-primary-foreground text-xs font-bold transition shadow-lg shadow-primary/20 cursor-pointer"
         >
           {isCreating || isUpdating ? (
             <Loader2 className="w-4 h-4 animate-spin" />
@@ -256,56 +256,56 @@ export default function ExamBuilderPage() {
           <div className="space-y-5">
 
             {/* Basic Info */}
-            <div className="p-5 rounded-3xl bg-[#0c142b] border border-white/[0.07] space-y-4">
-              <h2 className="text-xs font-bold text-white uppercase tracking-wider flex items-center gap-2">
-                <FileCheck2 className="w-4 h-4 text-violet-400" />
+            <div className="p-5 rounded-3xl bg-card text-card-foreground border border-border space-y-4 shadow-sm">
+              <h2 className="text-xs font-bold text-foreground uppercase tracking-wider flex items-center gap-2">
+                <FileCheck2 className="w-4 h-4 text-primary" />
                 بيانات الامتحان الأساسية
               </h2>
 
               {/* Title */}
               <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-slate-300">
-                  عنوان الامتحان <span className="text-rose-400">*</span>
+                <label className="text-xs font-semibold text-foreground">
+                  عنوان الامتحان <span className="text-destructive">*</span>
                 </label>
                 <input
                   {...register('title')}
                   type="text"
                   placeholder="مثال: الاختبار التجريبي الأول - الفيزياء 2025"
-                  className="w-full px-3.5 py-2.5 rounded-xl bg-[#080d1e] border border-white/[0.08] text-sm text-white placeholder:text-slate-600 focus:outline-none focus:border-violet-500/60 transition"
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-background border border-input text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary transition"
                 />
                 {errors.title && (
-                  <p className="text-xs text-rose-400">{errors.title.message}</p>
+                  <p className="text-xs text-destructive">{errors.title.message}</p>
                 )}
               </div>
 
               {/* Subject */}
               <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-slate-300">
-                  المادة الدراسية <span className="text-rose-400">*</span>
+                <label className="text-xs font-semibold text-foreground">
+                  المادة الدراسية <span className="text-destructive">*</span>
                 </label>
                 <select
                   {...register('subject_id')}
-                  className="w-full px-3 py-2.5 rounded-xl bg-[#080d1e] border border-white/[0.08] text-sm text-white focus:outline-none focus:border-violet-500/60 transition cursor-pointer"
+                  className="w-full px-3 py-2.5 rounded-xl bg-background border border-input text-sm text-foreground focus:outline-none focus:border-primary transition cursor-pointer"
                 >
                   <option value="0">— اختر المادة —</option>
                   {subjects.map((s) => (
                     <option key={s.id} value={s.id}>
-                      {s.name}
+                      {s.name} ({s.grade_level})
                     </option>
                   ))}
                 </select>
                 {errors.subject_id && (
-                  <p className="text-xs text-rose-400">{errors.subject_id.message}</p>
+                  <p className="text-xs text-destructive">{errors.subject_id.message}</p>
                 )}
               </div>
 
               {/* Unit (optional) */}
               <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-slate-300">الوحدة (اختياري)</label>
+                <label className="text-xs font-semibold text-foreground">الوحدة (اختياري)</label>
                 <select
                   {...register('unit_id')}
                   disabled={!selectedSubjectId}
-                  className="w-full px-3 py-2.5 rounded-xl bg-[#080d1e] border border-white/[0.08] text-sm text-white focus:outline-none focus:border-violet-500/60 disabled:opacity-50 transition cursor-pointer"
+                  className="w-full px-3 py-2.5 rounded-xl bg-background border border-input text-sm text-foreground focus:outline-none focus:border-primary disabled:opacity-50 transition cursor-pointer"
                 >
                   <option value="">— كامل المنهج / بدون تحديد —</option>
                   {units.map((u: Unit) => (
@@ -318,10 +318,10 @@ export default function ExamBuilderPage() {
 
               {/* Exam Type */}
               <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-slate-300">نوع الامتحان</label>
+                <label className="text-xs font-semibold text-foreground">نوع الامتحان</label>
                 <select
                   {...register('type')}
-                  className="w-full px-3 py-2.5 rounded-xl bg-[#080d1e] border border-white/[0.08] text-sm text-white focus:outline-none focus:border-violet-500/60 transition cursor-pointer"
+                  className="w-full px-3 py-2.5 rounded-xl bg-background border border-input text-sm text-foreground focus:outline-none focus:border-primary transition cursor-pointer"
                 >
                   <option value="practice">تجريبي (تدريب مفتوح)</option>
                   <option value="assessment">تقييمي (محدد بوقت ورصد درجات)</option>
@@ -331,9 +331,9 @@ export default function ExamBuilderPage() {
 
               {/* Duration */}
               <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-slate-300 flex items-center justify-between">
+                <label className="text-xs font-semibold text-foreground flex items-center justify-between">
                   <span>مدة الامتحان (بالدقائق)</span>
-                  <span className="text-violet-300 font-mono font-bold">{durationMinutes} دقيقة</span>
+                  <span className="text-primary font-mono font-bold">{durationMinutes} دقيقة</span>
                 </label>
                 <input
                   {...register('duration_minutes')}
@@ -341,43 +341,43 @@ export default function ExamBuilderPage() {
                   min={5}
                   max={300}
                   step={5}
-                  className="w-full px-3 py-2.5 rounded-xl bg-[#080d1e] border border-white/[0.08] text-sm text-white focus:outline-none focus:border-violet-500/60 transition"
+                  className="w-full px-3 py-2.5 rounded-xl bg-background border border-input text-sm text-foreground focus:outline-none focus:border-primary transition"
                 />
                 {errors.duration_minutes && (
-                  <p className="text-xs text-rose-400">{errors.duration_minutes.message}</p>
+                  <p className="text-xs text-destructive">{errors.duration_minutes.message}</p>
                 )}
               </div>
 
               {/* Total Marks & Pass Marks */}
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1.5">
-                  <label className="text-xs font-semibold text-slate-300">الدرجة الكلية</label>
+                  <label className="text-xs font-semibold text-foreground">الدرجة الكلية</label>
                   <input
                     {...register('total_marks')}
                     type="number"
                     min={1}
-                    className="w-full px-3 py-2.5 rounded-xl bg-[#080d1e] border border-white/[0.08] text-sm text-white focus:outline-none focus:border-violet-500/60 transition"
+                    className="w-full px-3 py-2.5 rounded-xl bg-background border border-input text-sm text-foreground focus:outline-none focus:border-primary transition"
                   />
                 </div>
                 <div className="space-y-1.5">
-                  <label className="text-xs font-semibold text-slate-300">درجة النجاح</label>
+                  <label className="text-xs font-semibold text-foreground">درجة النجاح</label>
                   <input
                     {...register('pass_marks')}
                     type="number"
                     min={1}
-                    className="w-full px-3 py-2.5 rounded-xl bg-[#080d1e] border border-white/[0.08] text-sm text-white focus:outline-none focus:border-violet-500/60 transition"
+                    className="w-full px-3 py-2.5 rounded-xl bg-background border border-input text-sm text-foreground focus:outline-none focus:border-primary transition"
                   />
                 </div>
               </div>
               {errors.pass_marks && (
-                <p className="text-xs text-rose-400">{errors.pass_marks.message}</p>
+                <p className="text-xs text-destructive">{errors.pass_marks.message}</p>
               )}
 
               {/* Published toggle */}
-              <div className="flex items-center justify-between p-3.5 rounded-2xl bg-white/[0.02] border border-white/[0.06]">
+              <div className="flex items-center justify-between p-3.5 rounded-2xl bg-muted/40 border border-border">
                 <div>
-                  <div className="text-xs font-semibold text-white">حالة النشر</div>
-                  <div className="text-[10px] text-slate-400">
+                  <div className="text-xs font-semibold text-foreground">حالة النشر</div>
+                  <div className="text-[10px] text-muted-foreground">
                     {isPublished ? 'متاح للطلاب فوراً' : 'مسودة غير مرئية'}
                   </div>
                 </div>
@@ -385,7 +385,7 @@ export default function ExamBuilderPage() {
                   type="button"
                   onClick={() => setValue('is_published', !isPublished)}
                   className={`relative w-10 h-5 rounded-full transition-colors duration-300 cursor-pointer ${
-                    isPublished ? 'bg-emerald-500' : 'bg-slate-600'
+                    isPublished ? 'bg-emerald-500' : 'bg-muted-foreground/30'
                   }`}
                 >
                   <span
@@ -398,30 +398,30 @@ export default function ExamBuilderPage() {
             </div>
 
             {/* Summary Box */}
-            <div className="p-5 rounded-3xl bg-gradient-to-bl from-violet-600/15 via-[#0c142b] to-[#0c142b] border border-violet-500/20 space-y-3">
-              <h3 className="text-xs font-bold text-violet-300 uppercase tracking-wider flex items-center gap-1.5">
+            <div className="p-5 rounded-3xl bg-card text-card-foreground border border-border space-y-3 shadow-sm">
+              <h3 className="text-xs font-bold text-primary uppercase tracking-wider flex items-center gap-1.5">
                 <Sparkles className="w-3.5 h-3.5" />
                 ملخص هيكل الاختبار
               </h3>
               <div className="space-y-2 text-xs">
-                <div className="flex justify-between text-slate-300">
+                <div className="flex justify-between text-muted-foreground">
                   <span>عدد الأسئلة المختارة:</span>
-                  <span className="font-bold text-white">{selectedQuestions.length} سؤال</span>
+                  <span className="font-bold text-foreground">{selectedQuestions.length} سؤال</span>
                 </div>
-                <div className="flex justify-between text-slate-300">
+                <div className="flex justify-between text-muted-foreground">
                   <span>مجموع الدرجات الموزعة:</span>
                   <span
                     className={`font-bold ${
                       allocatedMarksSum === Number(totalMarks)
-                        ? 'text-emerald-400'
-                        : 'text-amber-400'
+                        ? 'text-emerald-600 dark:text-emerald-400'
+                        : 'text-amber-600 dark:text-amber-400'
                     }`}
                   >
                     {allocatedMarksSum} / {totalMarks}
                   </span>
                 </div>
                 {allocatedMarksSum !== Number(totalMarks) && (
-                  <p className="text-[11px] text-amber-300/80 bg-amber-500/10 p-2 rounded-lg border border-amber-500/20">
+                  <p className="text-[11px] text-amber-700 dark:text-amber-300 bg-amber-500/10 p-2 rounded-lg border border-amber-500/20">
                     ⚠️ تنبيه: مجموع درجات الأسئلة ({allocatedMarksSum}) لا يطابق الدرجة الكلية ({totalMarks}).
                   </p>
                 )}
@@ -434,53 +434,53 @@ export default function ExamBuilderPage() {
           <div className="lg:col-span-2 space-y-5">
 
             {/* Selected Questions Section */}
-            <div className="p-5 rounded-3xl bg-[#0c142b] border border-white/[0.07] space-y-4">
+            <div className="p-5 rounded-3xl bg-card text-card-foreground border border-border space-y-4 shadow-sm">
               <div className="flex items-center justify-between">
-                <h2 className="text-xs font-bold text-white uppercase tracking-wider flex items-center gap-2">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+                <h2 className="text-xs font-bold text-foreground uppercase tracking-wider flex items-center gap-2">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-500" />
                   أسئلة الامتحان المختارة ({selectedQuestions.length})
                 </h2>
                 {errors.questions && (
-                  <span className="text-xs text-rose-400 font-semibold">{errors.questions.message}</span>
+                  <span className="text-xs text-destructive font-semibold">{errors.questions.message}</span>
                 )}
               </div>
 
               {selectedQuestions.length === 0 ? (
-                <div className="p-8 text-center border border-dashed border-white/10 rounded-2xl text-slate-500 text-xs space-y-2">
-                  <HelpCircle className="w-8 h-8 mx-auto text-slate-600" />
+                <div className="p-8 text-center border border-dashed border-border rounded-2xl text-muted-foreground text-xs space-y-2">
+                  <HelpCircle className="w-8 h-8 mx-auto text-muted-foreground/40" />
                   <p>لم يتم اختيار أي أسئلة للاختبار بعد.</p>
-                  <p className="text-[11px] text-slate-600">اختر أسئلة من بنك الأسئلة بالأسفل لإضافتها.</p>
+                  <p className="text-[11px] text-muted-foreground/70">اختر أسئلة من بنك الأسئلة بالأسفل لإضافتها.</p>
                 </div>
               ) : (
                 <div className="space-y-2 max-h-72 overflow-y-auto pr-1">
                   {selectedQuestions.map((sq, idx) => (
                     <div
                       key={sq.question_id}
-                      className="p-3 rounded-xl bg-[#080d1e] border border-white/[0.06] flex items-center justify-between gap-3 text-xs"
+                      className="p-3 rounded-xl bg-muted/40 border border-border flex items-center justify-between gap-3 text-xs"
                     >
                       <div className="flex items-center gap-2.5 min-w-0 flex-1">
-                        <span className="w-6 h-6 rounded-lg bg-white/5 flex items-center justify-center font-mono text-slate-400 text-[11px] shrink-0">
+                        <span className="w-6 h-6 rounded-lg bg-card flex items-center justify-center font-mono text-muted-foreground text-[11px] shrink-0 border border-border">
                           {idx + 1}
                         </span>
-                        <p className="text-white font-medium truncate">{sq.question_text || `سؤال #${sq.question_id}`}</p>
+                        <p className="text-foreground font-medium truncate">{sq.question_text || `سؤال #${sq.question_id}`}</p>
                       </div>
 
                       <div className="flex items-center gap-3 shrink-0">
                         <div className="flex items-center gap-1.5">
-                          <span className="text-slate-400 text-[11px]">الدرجة:</span>
+                          <span className="text-muted-foreground text-[11px]">الدرجة:</span>
                           <input
                             type="number"
                             min={1}
                             max={50}
                             value={sq.marks}
                             onChange={(e) => handleUpdateMarks(sq.question_id, Number(e.target.value))}
-                            className="w-14 px-2 py-1 rounded-lg bg-white/5 border border-white/10 text-center font-bold text-white text-xs focus:outline-none focus:border-violet-500"
+                            className="w-14 px-2 py-1 rounded-lg bg-background border border-input text-center font-bold text-foreground text-xs focus:outline-none focus:border-primary"
                           />
                         </div>
                         <button
                           type="button"
                           onClick={() => handleRemoveQuestion(sq.question_id)}
-                          className="p-1.5 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 transition cursor-pointer"
+                          className="p-1.5 rounded-lg bg-destructive/10 hover:bg-destructive/20 text-destructive transition cursor-pointer"
                           title="إزالة من الامتحان"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
@@ -493,20 +493,20 @@ export default function ExamBuilderPage() {
             </div>
 
             {/* Bank Question Picker */}
-            <div className="p-5 rounded-3xl bg-[#0c142b] border border-white/[0.07] space-y-4">
+            <div className="p-5 rounded-3xl bg-card text-card-foreground border border-border space-y-4 shadow-sm">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                <h2 className="text-xs font-bold text-white uppercase tracking-wider flex items-center gap-2">
-                  <BookOpen className="w-4 h-4 text-blue-400" />
+                <h2 className="text-xs font-bold text-foreground uppercase tracking-wider flex items-center gap-2">
+                  <BookOpen className="w-4 h-4 text-primary" />
                   اختيار من بنك الأسئلة
                 </h2>
                 <div className="relative max-w-xs">
-                  <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-500" />
+                  <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
                   <input
                     type="text"
                     placeholder="بحث في بنك الأسئلة..."
                     value={questionSearch}
                     onChange={(e) => setQuestionSearch(e.target.value)}
-                    className="w-full pr-9 pl-3 py-1.5 rounded-xl bg-[#080d1e] border border-white/[0.08] text-xs text-white placeholder:text-slate-600 focus:outline-none focus:border-violet-500/60"
+                    className="w-full pr-9 pl-3 py-1.5 rounded-xl bg-background border border-input text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary"
                   />
                 </div>
               </div>
@@ -515,10 +515,10 @@ export default function ExamBuilderPage() {
               <div className="space-y-2 max-h-96 overflow-y-auto pr-1">
                 {isLoadingBank ? (
                   Array.from({ length: 4 }).map((_, idx) => (
-                    <div key={idx} className="h-16 rounded-xl bg-white/[0.03] animate-pulse" />
+                    <div key={idx} className="h-16 rounded-xl bg-muted animate-pulse" />
                   ))
                 ) : bankQuestions.length === 0 ? (
-                  <div className="p-8 text-center text-slate-500 text-xs">
+                  <div className="p-8 text-center text-muted-foreground text-xs">
                     {!selectedSubjectId
                       ? 'اختر مادة دراسية أولاً لعرض الأسئلة المتاحة في بنك الأسئلة.'
                       : 'لا توجد أسئلة متوفرة لهذه المادة. يمكنك إضافة أسئلة من قسم بنك الأسئلة.'}
@@ -532,8 +532,8 @@ export default function ExamBuilderPage() {
                         onClick={() => handleToggleQuestion(q)}
                         className={`p-3 rounded-xl border flex items-center justify-between gap-3 text-xs transition cursor-pointer ${
                           isSelected
-                            ? 'bg-violet-600/15 border-violet-500/40 text-violet-200'
-                            : 'bg-[#080d1e] border-white/[0.05] hover:bg-white/[0.02] text-slate-300'
+                            ? 'bg-primary/10 border-primary/40 text-foreground'
+                            : 'bg-background border-border hover:bg-muted/30 text-foreground'
                         }`}
                       >
                         <div className="flex items-center gap-3 min-w-0 flex-1">
@@ -541,11 +541,11 @@ export default function ExamBuilderPage() {
                             type="checkbox"
                             checked={isSelected}
                             onChange={() => {}}
-                            className="w-4 h-4 rounded text-violet-600 focus:ring-0 cursor-pointer"
+                            className="w-4 h-4 rounded text-primary focus:ring-0 cursor-pointer"
                           />
                           <div className="min-w-0 flex-1">
-                            <p className="font-semibold text-white truncate">{q.question_text}</p>
-                            <div className="flex items-center gap-2 mt-1 text-[10px] text-slate-500">
+                            <p className="font-semibold text-foreground truncate">{q.question_text}</p>
+                            <div className="flex items-center gap-2 mt-1 text-[10px] text-muted-foreground">
                               <span>#{q.id}</span>
                               <span>• {q.type}</span>
                               <span>• {q.difficulty}</span>
@@ -557,8 +557,8 @@ export default function ExamBuilderPage() {
                         <span
                           className={`text-xs font-bold px-2.5 py-1 rounded-lg transition ${
                             isSelected
-                              ? 'bg-violet-600 text-white'
-                              : 'bg-white/5 text-slate-400 hover:text-white'
+                              ? 'bg-primary text-primary-foreground'
+                              : 'bg-muted text-muted-foreground hover:text-foreground'
                           }`}
                         >
                           {isSelected ? '✓ مضاف' : '+ إضافة'}

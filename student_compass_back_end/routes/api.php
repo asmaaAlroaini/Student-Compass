@@ -26,6 +26,7 @@ use App\Http\Controllers\Api\V1\Admin\UserController as AdminUserController;
 use App\Http\Controllers\Api\V1\Admin\ReportController as AdminReportController;
 use App\Http\Controllers\Api\V1\Admin\SubjectController as AdminSubjectController;
 use App\Http\Controllers\Api\V1\Admin\UnitController as AdminUnitController;
+use App\Http\Controllers\Api\V1\Admin\GradeLevelController as AdminGradeLevelController;
 
 /*
 |--------------------------------------------------------------------------
@@ -152,8 +153,9 @@ Route::prefix('v1')->group(function () {
             Route::get('/users', [AdminUserController::class, 'index']);
             Route::put('/users/{user}/status', [AdminUserController::class, 'updateStatus']);
 
-            // إدارة ومعالجة البلاغات
+            // إدارة ومعالجة البلاغات والتحليلات
             Route::get('/reports', [AdminReportController::class, 'index']);
+            Route::get('/reports/analytics', [AdminReportController::class, 'analytics']);
             Route::put('/reports/{id}/resolve', [AdminReportController::class, 'resolve']);
 
             // بث وإدارة الإشعارات المركزية
@@ -170,6 +172,14 @@ Route::prefix('v1')->group(function () {
             Route::post('/units', [AdminUnitController::class, 'store']);
             Route::put('/units/{id}', [AdminUnitController::class, 'update']);
             Route::delete('/units/{id}', [AdminUnitController::class, 'destroy']);
+
+            // إدارة الصفوف والمراحل الدراسية وتعيين المواد (Grade Levels CMS)
+            Route::get('/grade-levels', [AdminGradeLevelController::class, 'index']);
+            Route::post('/grade-levels', [AdminGradeLevelController::class, 'store']);
+            Route::put('/grade-levels/{id}', [AdminGradeLevelController::class, 'update']);
+            Route::delete('/grade-levels/{id}', [AdminGradeLevelController::class, 'destroy']);
+            Route::get('/grade-levels/{id}/subjects', [AdminGradeLevelController::class, 'getSubjects']);
+            Route::post('/grade-levels/{id}/assign-subjects', [AdminGradeLevelController::class, 'assignSubjects']);
         });
 
     });

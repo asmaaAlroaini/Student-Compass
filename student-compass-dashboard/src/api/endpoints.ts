@@ -24,8 +24,12 @@ export const API_ENDPOINTS = {
     DASHBOARD: '/admin/dashboard',
     USERS: '/admin/users',
     REPORTS: '/admin/reports',
+    REPORTS_ANALYTICS: '/admin/reports/analytics',
     NOTIFICATIONS: '/admin/notifications',
     SUBJECTS: '/admin/subjects',
     UNITS: '/admin/units',
+    GRADE_LEVELS: '/admin/grade-levels',
+    GRADE_LEVEL_SUBJECTS: (id: number | string) => `/admin/grade-levels/${id}/subjects`,
+    GRADE_LEVEL_ASSIGN: (id: number | string) => `/admin/grade-levels/${id}/assign-subjects`,
   },
 } as const;

@@ -1,0 +1,94 @@
+name: student_compass_mobile
+
+description: "A new Flutter project."
+
+publish_to: "none"
+
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.11.5
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  flutter_localizations:
+    sdk: flutter
+
+  # UI & Utilities
+  cupertino_icons: ^1.0.8
+  cached_network_image: ^3.4.1
+  delightful_toast: ^1.1.0
+  dotted_border: ^2.1.0
+  flutter_svg: ^2.0.17
+  intl: ^0.20.2
+  toastification: ^3.0.3
+
+  # State Management
+  flutter_bloc: ^9.1.1
+  get: ^4.6.6
+  get_it: ^9.2.1
+  signals_flutter: ^7.1.0
+
+  # Navigation
+  go_router: ^14.8.1
+
+  # Networking
+  dio: ^5.11.0
+  dartz: ^0.10.1
+
+  # Files & Storage
+  file_picker: ^10.3.7
+  open_file: ^4.0.0
+  path_provider: ^2.1.5
+  shared_preferences: ^2.5.4
+
+  # Device
+  image_picker: ^1.1.2
+  permission_handler: ^11.4.0
+
+  # Localization
+  flutter_localization: ^0.2.3
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+
+  flutter_lints: ^6.0.0
+
+  flutter_launcher_icons: ^0.14.4
+  intl_utils: ^2.8.14
+
+flutter:
+  uses-material-design: true
+
+  assets:
+    - assets/images/
+    - assets/fonts/
+    - assets/icons/
+
+  fonts:
+    - family: Almarai
+      fonts:
+        - asset: assets/fonts/Almarai-Regular.ttf
+        - asset: assets/fonts/Almarai-Bold.ttf
+          weight: 700
+        - asset: assets/fonts/Almarai-ExtraBold.ttf
+          weight: 800
+
+flutter_intl:
+  enabled: true
+
+flutter_assets:
+  assets_path:
+    - assets/images/
+    - assets/icons/
+  output_path: lib/core/utils/
+  filename: app_images.dart
+
+flutter_launcher_icons:
+  android: "launcher_icon"
+  ios: true
+  image_path: "assets/icons/appIcon.png"
+  min_sdk_android: 21

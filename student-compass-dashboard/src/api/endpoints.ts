@@ -1,0 +1,31 @@
+export const API_ENDPOINTS = {
+  AUTH: {
+    LOGIN: '/auth/login',
+    REGISTER: '/auth/register',
+    PROFILE: '/auth/profile',
+    LOGOUT: '/auth/logout',
+    CHANGE_PASSWORD: '/auth/change-password',
+    RESET_PASSWORD_REQUEST: '/auth/reset-password-request',
+    VERIFY_RESET_CODE: '/auth/verify-reset-code',
+    RESET_PASSWORD: '/auth/reset-password',
+    SETTINGS: '/auth/settings',
+    EDUCATIONAL_OPTIONS: '/auth/educational-options',
+  },
+  TEACHER: {
+    QUESTIONS: '/teacher/questions',
+    QUESTIONS_TEMPLATE: '/teacher/questions/template',
+    QUESTIONS_IMPORT_PREVIEW: '/teacher/questions/import-preview',
+    QUESTIONS_IMPORT_CONFIRM: '/teacher/questions/import-confirm',
+    EXAMS: '/teacher/exams',
+    COMPETITIONS: '/teacher/competitions',
+    LESSONS: '/teacher/lessons',
+  },
+  ADMIN: {
+    DASHBOARD: '/admin/dashboard',
+    USERS: '/admin/users',
+    REPORTS: '/admin/reports',
+    NOTIFICATIONS: '/admin/notifications',
+    SUBJECTS: '/admin/subjects',
+    UNITS: '/admin/units',
+  },
+} as const;

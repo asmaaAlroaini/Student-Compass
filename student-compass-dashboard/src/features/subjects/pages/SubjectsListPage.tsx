@@ -6,7 +6,6 @@ import {
   Filter,
   Pencil,
   Trash2,
-  ChevronLeft,
   FlaskConical,
   PenLine,
   Globe,

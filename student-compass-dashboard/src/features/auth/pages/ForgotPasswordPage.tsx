@@ -7,7 +7,6 @@ import {
   Eye,
   EyeOff,
   ArrowLeft,
-  KeyRound,
   ShieldCheck,
   CheckCircle2,
   Loader2,
@@ -38,7 +37,7 @@ export default function ForgotPasswordPage() {
 
   // Timer for resend code
   useEffect(() => {
-    let interval: NodeJS.Timeout;
+    let interval: ReturnType<typeof setInterval>;
     if (step === 'code' && resendTimer > 0) {
       interval = setInterval(() => {
         setResendTimer((prev) => prev - 1);

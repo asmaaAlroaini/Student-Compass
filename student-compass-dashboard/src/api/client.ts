@@ -84,3 +84,72 @@ export const fetchClient = async <T = unknown>(
 
   return (data as unknown) as T;
 };
+
+export const apiClient = {
+  get: async <T = any>(
+    endpoint: string,
+    config?: { params?: Record<string, any>; responseType?: string }
+  ): Promise<{ data: T }> => {
+    let url = endpoint;
+    if (config?.params) {
+      const sp = new URLSearchParams();
+      Object.entries(config.params).forEach(([k, v]) => {
+        if (v !== undefined && v !== null && v !== '') {
+          sp.append(k, String(v));
+        }
+      });
+      const q = sp.toString();
+      if (q) url += (url.includes('?') ? '&' : '?') + q;
+    }
+
+    if (config?.responseType === 'blob') {
+      const token = getAccessToken();
+      const headers = new Headers();
+      if (token) headers.set('Authorization', `Bearer ${token}`);
+      const fullUrl = url.startsWith('http') ? url : `${BASE_URL}${url}`;
+      const res = await fetch(fullUrl, { headers });
+      const blob = await res.blob();
+      return { data: blob as unknown as T };
+    }
+
+    const data = await fetchClient<T>(url, { method: 'GET' });
+    return { data };
+  },
+
+  post: async <T = any>(
+    endpoint: string,
+    data?: any,
+    config?: { headers?: Record<string, string> }
+  ): Promise<{ data: T }> => {
+    const isFormData = typeof FormData !== 'undefined' && data instanceof FormData;
+    const body = isFormData ? data : data !== undefined ? JSON.stringify(data) : undefined;
+    const res = await fetchClient<T>(endpoint, {
+      method: 'POST',
+      body,
+      headers: config?.headers,
+    });
+    return { data: res };
+  },
+
+  put: async <T = any>(
+    endpoint: string,
+    data?: any,
+    config?: { headers?: Record<string, string> }
+  ): Promise<{ data: T }> => {
+    const isFormData = typeof FormData !== 'undefined' && data instanceof FormData;
+    const body = isFormData ? data : data !== undefined ? JSON.stringify(data) : undefined;
+    const res = await fetchClient<T>(endpoint, {
+      method: 'PUT',
+      body,
+      headers: config?.headers,
+    });
+    return { data: res };
+  },
+
+  delete: async <T = any>(endpoint: string): Promise<{ data: T }> => {
+    const res = await fetchClient<T>(endpoint, { method: 'DELETE' });
+    return { data: res };
+  },
+};
+
+export default apiClient;

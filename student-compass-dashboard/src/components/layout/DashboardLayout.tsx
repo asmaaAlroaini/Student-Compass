@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { NavLink, Link, Outlet, useNavigate } from 'react-router-dom';
+import { NavLink, Link, Outlet } from 'react-router-dom';
 import {
   Compass,
   LayoutDashboard,
@@ -13,7 +13,6 @@ import {
   LogOut,
   Menu,
   X,
-  GraduationCap,
   Layers,
   UserCheck,
   BarChart3,
@@ -21,9 +20,6 @@ import {
   ChevronLeft,
   Shield,
   User as UserIcon,
-  Sparkles,
-  Plus,
-  Import,
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useLogout } from '@/features/auth/hooks/useLogout';

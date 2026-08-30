@@ -15,8 +15,8 @@ const PageLoader = () => (
   </div>
 );
 
-const s = <T extends React.ComponentType>(C: React.LazyExoticComponent<T>) => (
-  <Suspense fallback={<PageLoader />}><C /></Suspense>
+const s = (Component: React.LazyExoticComponent<React.ComponentType<any>>) => (
+  <Suspense fallback={<PageLoader />}><Component /></Suspense>
 );
 
 // ── Lazy imports ──

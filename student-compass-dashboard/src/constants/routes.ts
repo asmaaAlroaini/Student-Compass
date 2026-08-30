@@ -52,6 +52,7 @@ export const ROUTES = {
     COMPETITIONS: '/dashboard/competitions',
     COMPETITIONS_CREATE: '/dashboard/competitions/create',
     COMPETITIONS_LEADERBOARD: (id: string | number = ':competitionId') => `/dashboard/competitions/${id}/leaderboard`,
+    LEADERBOARD: '/dashboard/leaderboard',
 
     // Notifications
     NOTIFICATIONS: '/dashboard/notifications',

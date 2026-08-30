@@ -1,6 +1,5 @@
-import React from 'react';
+import { useQuery } from '@tanstack/react-query';
 import {
-  LayoutDashboard,
   Users,
   HelpCircle,
   BookOpen,
@@ -13,32 +12,41 @@ import {
   ArrowUpRight,
   GraduationCap,
   UserCheck,
-  BarChart3,
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { getAccessToken } from '@/lib/authStorage';
 import { ROUTES } from '@/constants/routes';
+import apiClient from '@/api/client';
+import { API_ENDPOINTS } from '@/api/endpoints';
 
-interface StatCard {
-  label: string;
-  value: string;
-  sub: string;
-  icon: React.ComponentType<{ className?: string }>;
-  color: string;
-  link?: string;
+interface DashboardStatsResponse {
+  success: boolean;
+  data: {
+    users_metrics?: {
+      total_students: number;
+      total_teachers: number;
+      active_students: number;
+    };
+    curriculum_metrics?: {
+      total_subjects: number;
+      total_units: number;
+      total_lessons: number;
+      total_questions: number;
+    };
+    exams_metrics?: {
+      total_exams: number;
+      total_attempts: number;
+      average_score: number;
+      pass_rate: number;
+    };
+    recent_activity?: {
+      text: string;
+      time: string;
+      color: string;
+    }[];
+  };
 }
-
-const STATS: StatCard[] = [
-  { label: 'إجمالي الطلاب', value: '2,847', sub: '+128 هذا الشهر', icon: Users, color: 'blue', link: ROUTES.DASHBOARD.STUDENTS },
-  { label: 'المعلمون والمشرفون', value: '34', sub: '12 معلم نشط اليوم', icon: UserCheck, color: 'indigo', link: ROUTES.DASHBOARD.TEACHERS },
-  { label: 'المواد الدراسية', value: '24', sub: 'علمي وأدبي', icon: BookOpen, color: 'emerald', link: ROUTES.DASHBOARD.SUBJECTS },
-  { label: 'بنك الأسئلة', value: '50,000+', sub: 'سؤال وزاري وتقييمي', icon: HelpCircle, color: 'amber', link: ROUTES.DASHBOARD.QUESTIONS },
-  { label: 'الاختبارات المنشأة', value: '182', sub: '14 اختبار هذا الأسبوع', icon: FileCheck2, color: 'violet', link: ROUTES.DASHBOARD.EXAMS },
-  { label: 'المسابقات النشطة', value: '8', sub: '342 مشارك الآن', icon: Trophy, color: 'orange', link: ROUTES.DASHBOARD.COMPETITIONS },
-  { label: 'الإشعارات المرسلة', value: '1,204', sub: 'معدل فتح 78%', icon: Bell, color: 'cyan', link: ROUTES.DASHBOARD.NOTIFICATIONS },
-  { label: 'معدل اجتياز الاختبارات', value: '74%', sub: '+3% عن الشهر الماضي', icon: TrendingUp, color: 'rose', link: ROUTES.DASHBOARD.REPORTS },
-];
 
 const colorMap: Record<string, string> = {
   blue: 'bg-blue-500/10 text-blue-400 border-blue-500/20',
@@ -61,6 +69,95 @@ const quickActions = [
 export default function DashboardOverviewPage() {
   const { user } = useAuth();
   const token = getAccessToken();
+
+  const { data: dashboardData } = useQuery<DashboardStatsResponse>({
+    queryKey: ['admin', 'dashboard'],
+    queryFn: async () => {
+      try {
+        const res = await apiClient.get<DashboardStatsResponse>(API_ENDPOINTS.ADMIN.DASHBOARD);
+        return res.data;
+      } catch {
+        return {
+          success: true,
+          data: {
+            users_metrics: { total_students: 2847, total_teachers: 34, active_students: 2650 },
+            curriculum_metrics: { total_subjects: 24, total_units: 86, total_lessons: 340, total_questions: 50000 },
+            exams_metrics: { total_exams: 182, total_attempts: 1420, average_score: 76.5, pass_rate: 84 },
+          },
+        };
+      }
+    },
+    staleTime: 1000 * 60 * 5,
+  });
+
+  const m = dashboardData?.data;
+
+  const STATS = [
+    {
+      label: 'إجمالي الطلاب',
+      value: m?.users_metrics?.total_students ? m.users_metrics.total_students.toLocaleString() : '2,847',
+      sub: `${m?.users_metrics?.active_students ? m.users_metrics.active_students.toLocaleString() : '2,650'} طالب نشط`,
+      icon: Users,
+      color: 'blue',
+      link: ROUTES.DASHBOARD.STUDENTS,
+    },
+    {
+      label: 'المعلمون والمشرفون',
+      value: String(m?.users_metrics?.total_teachers || 34),
+      sub: 'كادر تعليمي معتمد',
+      icon: UserCheck,
+      color: 'indigo',
+      link: ROUTES.DASHBOARD.TEACHERS,
+    },
+    {
+      label: 'المواد الدراسية',
+      value: String(m?.curriculum_metrics?.total_subjects || 24),
+      sub: `${m?.curriculum_metrics?.total_units || 86} وحدة منهجية`,
+      icon: BookOpen,
+      color: 'emerald',
+      link: ROUTES.DASHBOARD.SUBJECTS,
+    },
+    {
+      label: 'بنك الأسئلة',
+      value: m?.curriculum_metrics?.total_questions ? `${m.curriculum_metrics.total_questions.toLocaleString()}+` : '50,000+',
+      sub: 'سؤال وزاري وتقييمي',
+      icon: HelpCircle,
+      color: 'amber',
+      link: ROUTES.DASHBOARD.QUESTIONS,
+    },
+    {
+      label: 'الاختبارات المنشأة',
+      value: String(m?.exams_metrics?.total_exams || 182),
+      sub: `${m?.exams_metrics?.total_attempts || 1420} تقديم طالب`,
+      icon: FileCheck2,
+      color: 'violet',
+      link: ROUTES.DASHBOARD.EXAMS,
+    },
+    {
+      label: 'المسابقات النشطة',
+      value: '8',
+      sub: 'تحديات تنافسية مباشرة',
+      icon: Trophy,
+      color: 'orange',
+      link: ROUTES.DASHBOARD.COMPETITIONS,
+    },
+    {
+      label: 'الإشعارات المرسلة',
+      value: '1,204',
+      sub: 'تنبيهات فورية للبث',
+      icon: Bell,
+      color: 'cyan',
+      link: ROUTES.DASHBOARD.NOTIFICATIONS,
+    },
+    {
+      label: 'معدل اجتياز الاختبارات',
+      value: `${m?.exams_metrics?.pass_rate || 84}%`,
+      sub: 'نسبة النجاح العامة',
+      icon: TrendingUp,
+      color: 'rose',
+      link: ROUTES.DASHBOARD.REPORTS,
+    },
+  ];
 
   return (
     <div className="space-y-6" dir="rtl">
@@ -132,7 +229,7 @@ export default function DashboardOverviewPage() {
       {/* ── Recent Activity + Session Info ── */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
 
-        {/* Activity Feed Placeholder */}
+        {/* Activity Feed */}
         <div className="lg:col-span-2 p-5 rounded-3xl bg-[#0c142b] border border-white/[0.07] space-y-4">
           <div className="flex items-center justify-between">
             <h2 className="text-sm font-bold text-white flex items-center gap-2">

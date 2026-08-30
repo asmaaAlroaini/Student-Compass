@@ -1,4 +1,4 @@
-import type { User, UserRole } from './user';
+import type { User } from './user';
 
 export interface ApiResponse<T = unknown> {
   success: boolean;

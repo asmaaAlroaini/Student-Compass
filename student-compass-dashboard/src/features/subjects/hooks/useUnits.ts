@@ -1,19 +1,28 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { unitsApi } from '../api/unitsApi';
-import type { UnitFormData } from '../types/unit.types';
+import type { UnitFormData, Unit } from '../types/unit.types';
 
 const QK = {
-  bySubject: (subjectId: number) => ['units', 'subject', subjectId] as const,
+  bySubject: (subjectId?: number) => ['units', 'subject', subjectId ?? 'all'] as const,
 };
 
-export function useUnitsBySubject(subjectId: number) {
+export function useUnits(subjectId?: number) {
   return useQuery({
     queryKey: QK.bySubject(subjectId),
-    queryFn: () => unitsApi.listBySubject(subjectId),
+    queryFn: async () => {
+      if (subjectId && subjectId > 0) {
+        return unitsApi.listBySubject(subjectId);
+      }
+      return { success: true, data: [] as Unit[] };
+    },
     select: (res) => res.data,
-    enabled: subjectId > 0,
+    enabled: typeof subjectId === 'number' && subjectId > 0,
   });
+}
+
+export function useUnitsBySubject(subjectId: number) {
+  return useUnits(subjectId);
 }
 
 export function useCreateUnit() {

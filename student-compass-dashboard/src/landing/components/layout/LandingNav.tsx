@@ -1,6 +1,6 @@
 import { CTA, FOOTER } from "@/landing/content/shared";
 import { ArrowLeft, GraduationCap, Menu, X } from "lucide-react";
-import { motion, useScroll, useTransform } from "motion/react";
+import { motion, useScroll } from "motion/react";
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { ROUTES } from "@/constants/routes";
@@ -12,11 +12,6 @@ export default function LandingNav() {
   const [scrolled, setScrolled] = useState(false);
 
   const { scrollY } = useScroll();
-  const navBg = useTransform(
-    scrollY,
-    [0, 80],
-    ["rgba(0,0,0,0)", "rgba(var(--landing-bg-rgb, 248,250,252), 0.92)"],
-  );
 
   useEffect(() => {
     const unsub = scrollY.on("change", (v) => setScrolled(v > 20));

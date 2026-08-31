@@ -15,6 +15,9 @@ abstract class ReviewRepo {
 
   /// حفظ أو إلغاء حفظ سؤال
   Future<Either<Failure, bool>> toggleBookmark({required int questionId});
+
+  /// جلب السجل التراكمي وتحليلات الأداء
+  Future<Either<Failure, Map<String, dynamic>>> fetchStudentProgress();
 }
 
 class ReviewRepoImpl implements ReviewRepo {
@@ -89,6 +92,28 @@ class ReviewRepoImpl implements ReviewRepo {
 
       final isBookmarked = data['is_bookmarked'] == true;
       return right(isBookmarked);
+    } catch (e) {
+      if (e is DioException) {
+        return left(ServerFailure.fromDioException(e));
+      }
+      return left(ServerFailure(e.toString()));
+    }
+  }
+
+  @override
+  Future<Either<Failure, Map<String, dynamic>>> fetchStudentProgress() async {
+    try {
+      final data = await apiService.get(
+        endPoint: AppConstants.kStudentProgress,
+        body: null,
+        token: Prefs.getString(AppConstants.kToken),
+      );
+
+      final Map<String, dynamic> result = (data['data'] is Map<String, dynamic>)
+          ? data['data'] as Map<String, dynamic>
+          : (data is Map<String, dynamic> ? data : <String, dynamic>{});
+
+      return right(result);
     } catch (e) {
       if (e is DioException) {
         return left(ServerFailure.fromDioException(e));

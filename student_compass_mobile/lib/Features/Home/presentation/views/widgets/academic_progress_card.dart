@@ -31,9 +31,14 @@ class AcademicProgressCard extends StatelessWidget {
         const SizedBox(height: AppSpacing.s10),
 
         // Main Card
-        Container(
-          width: double.infinity,
-          decoration: BoxDecoration(
+        InkWell(
+          onTap: () {
+            context.push(RouteNames.studentProgress);
+          },
+          borderRadius: BorderRadius.circular(20),
+          child: Container(
+            width: double.infinity,
+            decoration: BoxDecoration(
             color: AppColors.itemsColor(context),
             borderRadius: BorderRadius.circular(20),
             border: Border.all(
@@ -216,8 +221,9 @@ class AcademicProgressCard extends StatelessWidget {
             ],
           ),
         ),
-      ],
-    );
+      ),
+    ],
+  );
   }
 
   Widget _buildStatColumn({

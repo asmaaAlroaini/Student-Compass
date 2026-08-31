@@ -34,8 +34,10 @@ import 'package:student_compass_mobile/Features/Profile/presentation/views/profi
 import 'package:student_compass_mobile/Features/Review/data/repos/review_repo.dart';
 import 'package:student_compass_mobile/Features/Review/presentation/logic/bookmarks_cubit/bookmarks_cubit.dart';
 import 'package:student_compass_mobile/Features/Review/presentation/logic/incorrect_questions_cubit/incorrect_questions_cubit.dart';
+import 'package:student_compass_mobile/Features/Review/presentation/logic/student_progress_cubit/student_progress_cubit.dart';
 import 'package:student_compass_mobile/Features/Review/presentation/views/bookmarks_view.dart';
 import 'package:student_compass_mobile/Features/Review/presentation/views/incorrect_questions_view.dart';
+import 'package:student_compass_mobile/Features/Review/presentation/views/student_progress_view.dart';
 import 'package:student_compass_mobile/Features/Settings/presentation/views/settings_view.dart';
 import 'package:student_compass_mobile/Features/Splash/presentation/views/splash_view.dart';
 import 'package:student_compass_mobile/Features/StudyPlan/data/repos/study_plan_repo.dart';
@@ -319,6 +321,14 @@ class AppRoutes {
         builder: (context, state) => BlocProvider(
           create: (context) => BookmarksCubit(getIt<ReviewRepo>()),
           child: const BookmarksView(),
+        ),
+        transition: TransitionType.slideFromRight,
+      ),
+      _buildRoute(
+        path: RouteNames.studentProgress,
+        builder: (context, state) => BlocProvider(
+          create: (context) => StudentProgressCubit(getIt<ReviewRepo>()),
+          child: const StudentProgressView(),
         ),
         transition: TransitionType.slideFromRight,
       ),

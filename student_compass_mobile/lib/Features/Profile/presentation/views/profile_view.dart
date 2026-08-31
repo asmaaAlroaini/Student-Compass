@@ -90,6 +90,13 @@ class _ProfileViewState extends State<ProfileView> {
                   Divider(color: AppColors.borderColor(context)),
                   const SizedBox(height: AppSpacing.s8),
 
+                  // Student Progress & Performance
+                  ProfileMenuTile(
+                    icon: Icons.analytics_outlined,
+                    title: 'السجل التراكمي وتحليلات الأداء',
+                    onTap: () => context.push(RouteNames.studentProgress),
+                  ),
+
                   // My Study Plan
                   ProfileMenuTile(
                     icon: Icons.event_note_rounded,

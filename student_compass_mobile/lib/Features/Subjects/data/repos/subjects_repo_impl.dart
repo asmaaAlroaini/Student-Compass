@@ -100,8 +100,12 @@ class SubjectsRepoImpl implements SubjectsRepo {
         token: Prefs.getString(AppConstants.kToken),
       );
 
+      final rawData = data['data'] ?? data;
+      final lessonJson = (rawData is Map && rawData.containsKey('lesson'))
+          ? rawData['lesson']
+          : rawData;
       final lesson =
-          LessonModel.fromJson(data['data'] as Map<String, dynamic>);
+          LessonModel.fromJson(lessonJson as Map<String, dynamic>);
 
       return right(lesson);
     } catch (e) {

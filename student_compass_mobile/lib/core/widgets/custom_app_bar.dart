@@ -17,7 +17,7 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
     this.actions,
     this.leading,
     this.elevation = 0,
-    this.useGradient = false,
+    this.useGradient = true,
   });
 
   final String title;
@@ -37,122 +37,154 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
     final bool canPop = Navigator.of(context).canPop();
     final bool shouldShowBack = showBackButton && canPop;
 
-    final defaultBgColor = AppColors.itemsColor(context);
-    final effectiveBackgroundColor = backgroundColor ?? (useGradient ? Colors.transparent : defaultBgColor);
-    final effectiveTextColor = textColor ?? (useGradient ? Colors.white : AppColors.textBoldColor(context));
+    final primary = AppColors.primaryColor(context);
+    final effectiveBgColor = backgroundColor ?? primary;
+    final effectiveTextColor = textColor ?? Colors.white;
 
     return Container(
       decoration: BoxDecoration(
-        color: useGradient ? null : effectiveBackgroundColor,
-        gradient: useGradient
+        color: effectiveBgColor,
+        gradient: useGradient && backgroundColor == null
             ? LinearGradient(
                 colors: [
-                  AppColors.primaryColor(context),
-                  AppColors.primaryColor(context).withValues(alpha: 0.85),
+                  primary,
+                  primary.withValues(alpha: 0.92),
                 ],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
+                begin: Alignment.topRight,
+                end: Alignment.bottomLeft,
               )
             : null,
-        border: useGradient
-            ? null
-            : Border(
-                bottom: BorderSide(
-                  color: AppColors.borderColor(context).withValues(alpha: 0.6),
-                  width: 1,
-                ),
-              ),
         boxShadow: [
           BoxShadow(
-            color: AppColors.shadowColor(context).withValues(alpha: 0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
+            color: primary.withValues(alpha: 0.25),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
           ),
         ],
       ),
-      child: SafeArea(
-        bottom: false,
-        child: AppBar(
-          backgroundColor: Colors.transparent,
-          elevation: 0,
-          scrolledUnderElevation: 0,
-          centerTitle: isChat == true ? false : centerTitle,
-          titleSpacing: isChat == true ? 0 : NavigationToolbar.kMiddleSpacing,
-          automaticallyImplyLeading: false,
-          leading: leading ??
-              (shouldShowBack
-                  ? Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-                      child: Material(
-                        color: Colors.transparent,
-                        child: InkWell(
-                          borderRadius: BorderRadius.circular(12),
-                          onTap: onBackTap ??
-                              () {
-                                if (context.canPop()) {
-                                  context.pop();
-                                } else {
-                                  Navigator.of(context).maybePop();
-                                }
-                              },
-                          child: Container(
-                            decoration: BoxDecoration(
-                              color: useGradient
-                                  ? Colors.white.withValues(alpha: 0.2)
-                                  : AppColors.scaffoldBackgroundColor(null, context),
-                              borderRadius: BorderRadius.circular(12),
-                              border: Border.all(
-                                color: useGradient
-                                    ? Colors.white.withValues(alpha: 0.3)
-                                    : AppColors.borderColor(context),
-                                width: 1,
+      child: ClipRRect(
+        child: Stack(
+          children: [
+            // Decorative subtle background circles on corners
+            Positioned(
+              top: -30,
+              right: -25,
+              child: Container(
+                width: 95,
+                height: 95,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: Colors.white.withValues(alpha: 0.09),
+                ),
+              ),
+            ),
+            Positioned(
+              bottom: -35,
+              left: -20,
+              child: Container(
+                width: 90,
+                height: 90,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: Colors.white.withValues(alpha: 0.07),
+                ),
+              ),
+            ),
+            Positioned(
+              top: 15,
+              left: 70,
+              child: Container(
+                width: 36,
+                height: 36,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: Colors.white.withValues(alpha: 0.05),
+                ),
+              ),
+            ),
+
+            SafeArea(
+              bottom: false,
+              child: AppBar(
+                backgroundColor: Colors.transparent,
+                elevation: 0,
+                scrolledUnderElevation: 0,
+                centerTitle: isChat == true ? false : centerTitle,
+                titleSpacing: isChat == true ? 0 : NavigationToolbar.kMiddleSpacing,
+                automaticallyImplyLeading: false,
+                leading: leading ??
+                    (shouldShowBack
+                        ? Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+                            child: Material(
+                              color: Colors.transparent,
+                              child: InkWell(
+                                borderRadius: BorderRadius.circular(12),
+                                onTap: onBackTap ??
+                                    () {
+                                      if (context.canPop()) {
+                                        context.pop();
+                                      } else {
+                                        Navigator.of(context).maybePop();
+                                      }
+                                    },
+                                child: Container(
+                                  decoration: BoxDecoration(
+                                    color: Colors.white.withValues(alpha: 0.18),
+                                    borderRadius: BorderRadius.circular(12),
+                                    border: Border.all(
+                                      color: Colors.white.withValues(alpha: 0.28),
+                                      width: 1,
+                                    ),
+                                  ),
+                                  child: Icon(
+                                    Icons.arrow_back_ios_new_rounded,
+                                    size: 16,
+                                    color: effectiveTextColor,
+                                  ),
+                                ),
                               ),
                             ),
-                            child: Icon(
-                              Icons.arrow_back_ios_new_rounded,
-                              size: 16,
-                              color: effectiveTextColor,
-                            ),
+                          )
+                        : null),
+                actions: actions != null
+                    ? [
+                        ...actions!,
+                        const SizedBox(width: 8),
+                      ]
+                    : null,
+                title: isChat == true
+                    ? Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const CircleAvatar(
+                            radius: 18,
+                            backgroundImage: AssetImage(Assets.assetsIconsAppIcon),
                           ),
+                          const SizedBox(width: 10),
+                          Text(
+                            title,
+                            style: TextStyles.bold16.copyWith(color: effectiveTextColor),
+                          ),
+                        ],
+                      )
+                    : Text(
+                        title,
+                        style: TextStyles.bold18.copyWith(
+                          color: effectiveTextColor,
+                          letterSpacing: -0.2,
                         ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
-                    )
-                  : null),
-          actions: actions != null
-              ? [
-                  ...actions!,
-                  const SizedBox(width: 8),
-                ]
-              : null,
-          title: isChat == true
-              ? Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const CircleAvatar(
-                      radius: 18,
-                      backgroundImage: AssetImage(Assets.assetsIconsAppIcon),
-                    ),
-                    const SizedBox(width: 10),
-                    Text(
-                      title,
-                      style: TextStyles.bold16.copyWith(color: effectiveTextColor),
-                    ),
-                  ],
-                )
-              : Text(
-                  title,
-                  style: TextStyles.bold16.copyWith(
-                    color: effectiveTextColor,
-                    letterSpacing: -0.2,
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
+              ),
+            ),
+          ],
         ),
       ),
     );
   }
 
   @override
-  Size get preferredSize => const Size.fromHeight(kToolbarHeight + 4);
+  Size get preferredSize => const Size.fromHeight(kToolbarHeight + 6);
 }

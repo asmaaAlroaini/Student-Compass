@@ -15,6 +15,7 @@ class DatabaseSeeder extends Seeder
             GradeLevelSeeder::class,
             UserSeeder::class,
             CurriculumSeeder::class,
+            ComprehensiveLessonSeeder::class,
             QuestionBankSeeder::class,
             ExamSeeder::class,
             StudyPlanSeeder::class,

@@ -1,4 +1,5 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:student_compass_mobile/Features/Auth/data/models/user/user.dart';
 import 'package:student_compass_mobile/Features/Profile/data/repos/profile_repo.dart';
 import 'package:student_compass_mobile/Features/Profile/presentation/logic/profile_cubit/profile_state.dart';
 import 'package:student_compass_mobile/core/constants/constants.dart';
@@ -15,6 +16,11 @@ class ProfileCubit extends Cubit<ProfileState> {
     } else {
       fetchProfile();
     }
+  }
+
+  void updateUser(User user) {
+    Prefs.setUser(AppConstants.kCurrentUser, user);
+    emit(ProfileSuccess(user: user));
   }
 
   Future<void> fetchProfile() async {

@@ -42,13 +42,48 @@ class ProfileRepoImpl implements ProfileRepo {
     required UpdateProfileRequestModel request,
   }) async {
     try {
-      var data = await apiService.put(
-        endPoint: AppConstants.kUpdateProfile,
-        body: request.toJson(),
-        token: Prefs.getString(AppConstants.kToken),
-      );
+      dynamic responseData;
+      if (request.profileImage != null) {
+        final fileName = request.profileImage!.path.split('/').last.split('\\').last;
+        final formData = FormData.fromMap({
+          'first_name': request.firstName,
+          'last_name': request.lastName,
+          'name': '${request.firstName} ${request.lastName}'.trim(),
+          'phone': request.phone,
+          if (request.gradeLevel != null) 'grade_level': request.gradeLevel,
+          if (request.track != null) 'track': request.track,
+          'avatar': await MultipartFile.fromFile(
+            request.profileImage!.path,
+            filename: fileName,
+          ),
+          'image': await MultipartFile.fromFile(
+            request.profileImage!.path,
+            filename: fileName,
+          ),
+          '_method': 'PUT',
+        });
 
-      final userJson = data['data'] ?? data;
+        responseData = await apiService.post(
+          endPoint: AppConstants.kUpdateProfile,
+          body: formData,
+          token: Prefs.getString(AppConstants.kToken),
+        );
+      } else {
+        responseData = await apiService.put(
+          endPoint: AppConstants.kUpdateProfile,
+          body: {
+            'first_name': request.firstName,
+            'last_name': request.lastName,
+            'name': '${request.firstName} ${request.lastName}'.trim(),
+            'phone': request.phone,
+            if (request.gradeLevel != null) 'grade_level': request.gradeLevel,
+            if (request.track != null) 'track': request.track,
+          },
+          token: Prefs.getString(AppConstants.kToken),
+        );
+      }
+
+      final userJson = responseData['data'] ?? responseData;
       final user = User.fromJson(userJson as Map<String, dynamic>);
 
       // Update cached user locally

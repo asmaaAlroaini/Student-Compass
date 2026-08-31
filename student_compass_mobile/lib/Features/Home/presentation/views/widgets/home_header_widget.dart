@@ -36,11 +36,99 @@ class HomeHeaderWidget extends StatelessWidget {
 
         return Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            // Left Action Icons (Theme Switcher & Notifications with Badge)
+            // Right Side: User Avatar on the far right + Greeting text beside it
+            GestureDetector(
+              onTap: () {
+                context.push(RouteNames.profile);
+              },
+              child: Row(
+                children: [
+                  // Avatar with Ring & Glow
+                  Container(
+                    width: 48,
+                    height: 48,
+                    decoration: BoxDecoration(
+                      color: AppColors.primaryColor(context).withValues(alpha: 0.15),
+                      shape: BoxShape.circle,
+                      border: Border.all(
+                        color: AppColors.primaryColor(context).withValues(alpha: 0.35),
+                        width: 2,
+                      ),
+                    ),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(24),
+                      child: (user?.avatar != null && user!.avatar!.isNotEmpty)
+                          ? CustomImageWidget(
+                              image: user.avatar,
+                              width: 48,
+                              height: 48,
+                              fit: BoxFit.cover,
+                            )
+                          : Icon(
+                              Icons.person_rounded,
+                              size: 28,
+                              color: AppColors.primaryColor(context),
+                            ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+
+                  // Greeting + Name Text
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      RichText(
+                        text: TextSpan(
+                          children: [
+                            TextSpan(
+                              text: '${s.GreetingHello} ',
+                              style: TextStyles.bold16.copyWith(
+                                color: AppColors.textBoldColor(context),
+                                fontFamily: 'Almarai',
+                              ),
+                            ),
+                            TextSpan(
+                              text: userName,
+                              style: TextStyles.bold16.copyWith(
+                                color: AppColors.primaryColor(context),
+                                fontFamily: 'Almarai',
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        s.HowAreYouToday,
+                        style: TextStyles.regular12.copyWith(
+                          color: AppColors.textSecondaryColor(context),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+
+            // Left Side: Action Icons (Theme Switcher + Notifications with Badge)
             Row(
               children: [
-                // 1. Notifications Button with Red Badge
+                // 1. Dark / Light Theme Toggle Button
+                _buildCircleActionButton(
+                  context: context,
+                  icon: isDark
+                      ? Icons.light_mode_outlined
+                      : Icons.nightlight_round_outlined,
+                  onTap: () {
+                    AppSettings.changeTheme();
+                  },
+                ),
+
+                const SizedBox(width: 10),
+
+                // 2. Notifications Button with Red Badge
                 BlocBuilder<NotificationsCubit, NotificationsState>(
                   builder: (context, notifState) {
                     int unreadCount = 0;
@@ -87,82 +175,6 @@ class HomeHeaderWidget extends StatelessWidget {
                     );
                   },
                 ),
-
-                const SizedBox(width: 12),
-
-                // 2. Dark / Light Theme Toggle Button
-                _buildCircleActionButton(
-                  context: context,
-                  icon: isDark
-                      ? Icons.light_mode_outlined
-                      : Icons.nightlight_round_outlined,
-                  onTap: () {
-                    AppSettings.changeTheme();
-                  },
-                ),
-              ],
-            ),
-
-            // Right User Profile Info (Avatar + Greeting Text)
-            Row(
-              children: [
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    RichText(
-                      text: TextSpan(
-                        children: [
-                          TextSpan(
-                            text: '${s.GreetingHello} ',
-                            style: TextStyles.bold18.copyWith(
-                              color: AppColors.textBoldColor(context),
-                              fontFamily: 'Almarai',
-                            ),
-                          ),
-                          TextSpan(
-                            text: userName,
-                            style: TextStyles.bold18.copyWith(
-                              color: const Color(0xFF10B981), // Bright Emerald Green
-                              fontFamily: 'Almarai',
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      s.HowAreYouToday,
-                      style: TextStyles.regular12.copyWith(
-                        color: AppColors.textSecondaryColor(context),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(width: 12),
-                // Avatar with Soft Green Background
-                Container(
-                  width: 48,
-                  height: 48,
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF10B981).withValues(alpha: 0.25),
-                    shape: BoxShape.circle,
-                  ),
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(24),
-                    child: (user?.avatar != null && user!.avatar!.isNotEmpty)
-                        ? CustomImageWidget(
-                            image: user.avatar,
-                            width: 48,
-                            height: 48,
-                            fit: BoxFit.cover,
-                          )
-                        : const Icon(
-                            Icons.person_rounded,
-                            size: 30,
-                            color: Color(0xFF065F46),
-                          ),
-                  ),
-                ),
               ],
             ),
           ],
@@ -180,8 +192,8 @@ class HomeHeaderWidget extends StatelessWidget {
       onTap: onTap,
       borderRadius: BorderRadius.circular(24),
       child: Container(
-        width: 44,
-        height: 44,
+        width: 42,
+        height: 42,
         decoration: BoxDecoration(
           color: AppColors.itemsColor(context),
           shape: BoxShape.circle,
@@ -191,7 +203,7 @@ class HomeHeaderWidget extends StatelessWidget {
           ),
           boxShadow: [
             BoxShadow(
-              color: AppColors.shadowColor(context),
+              color: AppColors.shadowColor(context).withValues(alpha: 0.05),
               blurRadius: 6,
               offset: const Offset(0, 2),
             ),
@@ -200,7 +212,7 @@ class HomeHeaderWidget extends StatelessWidget {
         child: Center(
           child: Icon(
             icon,
-            size: 22,
+            size: 20,
             color: AppColors.textPrimaryColor(context),
           ),
         ),

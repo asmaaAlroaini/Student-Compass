@@ -7,6 +7,7 @@ import 'package:student_compass_mobile/core/helper/custom_loading_indicator.dart
 import 'package:student_compass_mobile/core/utils/app_colors.dart';
 import 'package:student_compass_mobile/core/utils/app_text_style.dart';
 import 'package:student_compass_mobile/core/widgets/custom_app_bar.dart';
+import 'package:student_compass_mobile/core/widgets/report_question_dialog.dart';
 import 'package:student_compass_mobile/Features/Exams/data/models/exam_question_model.dart';
 
 class IncorrectQuestionsView extends StatefulWidget {
@@ -144,18 +145,39 @@ class _IncorrectQuestionsViewState extends State<IncorrectQuestionsView> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Question Number + Difficulty Badge
+            // Question Number + Report Button + Difficulty Badge
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text('سؤال ${index + 1}', style: TextStyles.bold12.copyWith(color: AppColors.primaryColor(context))),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                  decoration: BoxDecoration(
-                    color: AppColors.red().withValues(alpha: 0.12),
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: Text(q.difficulty, style: TextStyles.bold10.copyWith(color: AppColors.red())),
+                Row(
+                  children: [
+                    InkWell(
+                      onTap: () {
+                        ReportQuestionDialog.show(context, questionId: q.id);
+                      },
+                      borderRadius: BorderRadius.circular(8),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        child: Row(
+                          children: [
+                            Icon(Icons.flag_outlined, size: 14, color: AppColors.textSecondaryColor(context)),
+                            const SizedBox(width: 3),
+                            Text('إبلاغ', style: TextStyles.regular10.copyWith(color: AppColors.textSecondaryColor(context))),
+                          ],
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                      decoration: BoxDecoration(
+                        color: AppColors.red().withValues(alpha: 0.12),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Text(q.difficulty, style: TextStyles.bold10.copyWith(color: AppColors.red())),
+                    ),
+                  ],
                 ),
               ],
             ),

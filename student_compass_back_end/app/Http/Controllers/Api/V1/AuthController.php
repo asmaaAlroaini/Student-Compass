@@ -86,20 +86,45 @@ class AuthController extends Controller
     {
         $user = $request->user();
 
-        $validated = $request->validate([
-            'name' => 'sometimes|required|string|max:255',
-            'phone' => 'nullable|string|max:20',
-            'grade_level' => 'nullable|string|max:100',
-            'track' => 'nullable|string|max:100',
-            'avatar' => 'nullable|string|max:255',
-        ]);
+        if ($request->filled('first_name') || $request->filled('last_name')) {
+            $name = trim(($request->input('first_name') ?? '') . ' ' . ($request->input('last_name') ?? ''));
+            if (!empty($name)) {
+                $user->name = $name;
+            }
+        } elseif ($request->filled('name')) {
+            $user->name = $request->input('name');
+        }
 
-        $user->update($validated);
+        if ($request->has('phone')) {
+            $user->phone = $request->input('phone');
+        }
+        if ($request->has('grade_level')) {
+            $user->grade_level = $request->input('grade_level');
+        }
+        if ($request->has('track')) {
+            $user->track = $request->input('track');
+        }
+
+        // معالجة رفع الصورة الشخصية (avatar / image / profile_image)
+        if ($request->hasFile('avatar')) {
+            $path = $request->file('avatar')->store('avatars', 'public');
+            $user->avatar = asset('storage/' . $path);
+        } elseif ($request->hasFile('image')) {
+            $path = $request->file('image')->store('avatars', 'public');
+            $user->avatar = asset('storage/' . $path);
+        } elseif ($request->hasFile('profile_image')) {
+            $path = $request->file('profile_image')->store('avatars', 'public');
+            $user->avatar = asset('storage/' . $path);
+        } elseif ($request->filled('avatar')) {
+            $user->avatar = $request->input('avatar');
+        }
+
+        $user->save();
 
         return response()->json([
             'success' => true,
             'message' => 'تم تحديث بيانات الملف الشخصي بنجاح.',
-            'data' => $user,
+            'data' => $user->fresh(),
         ]);
     }
 

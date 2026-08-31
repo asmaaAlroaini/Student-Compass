@@ -50,7 +50,7 @@ class AcademicProgressCard extends StatelessWidget {
           ),
           child: Stack(
             children: [
-              // Top-left soft blue decorative background patch
+              // Top-left soft primary decorative background patch
               Positioned(
                 top: 0,
                 left: 0,
@@ -71,12 +71,74 @@ class AcademicProgressCard extends StatelessWidget {
                 padding: const EdgeInsets.all(AppSpacing.s20),
                 child: Column(
                   children: [
-                    // Top Info Row (Title & Circular Progress Gauge)
+                    // Top Info Row: Text on the RIGHT, Circular Indicator on the LEFT
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
-                        // Left: Circular Progress Gauge (75% / actual)
+                        // Right in RTL: Title & Stats Text
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                s.AcademicComprehensivePlan,
+                                style: TextStyles.bold16.copyWith(
+                                  color: AppColors.textBoldColor(context),
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+
+                              // 3 Stats in a Row (Aligning to the right in RTL)
+                              Row(
+                                children: [
+                                  BlocBuilder<SubjectsCubit, SubjectsState>(
+                                    builder: (context, subState) {
+                                      int count = 6;
+                                      if (subState is SubjectsSuccess) {
+                                        count = subState.subjects.length;
+                                      }
+                                      return _buildStatColumn(
+                                        context: context,
+                                        label: s.ActiveSubjects,
+                                        value: '$count',
+                                        valueColor: AppColors.textBoldColor(context),
+                                      );
+                                    },
+                                  ),
+                                  const SizedBox(width: 14),
+                                  BlocBuilder<ExamsCubit, ExamsState>(
+                                    builder: (context, examState) {
+                                      int count = 4;
+                                      if (examState is ExamsSuccess) {
+                                        count = examState.exams
+                                            .where((e) => e.hasTaken)
+                                            .length;
+                                      }
+                                      return _buildStatColumn(
+                                        context: context,
+                                        label: s.CompletedExams,
+                                        value: '$count',
+                                        valueColor: const Color(0xFF10B981),
+                                      );
+                                    },
+                                  ),
+                                  const SizedBox(width: 14),
+                                  _buildStatColumn(
+                                    context: context,
+                                    label: s.SuccessRate,
+                                    value: '88%',
+                                    valueColor: const Color(0xFFE11D48),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ),
+
+                        const SizedBox(width: 12),
+
+                        // Left in RTL: Circular Progress Gauge
                         BlocBuilder<ExamsCubit, ExamsState>(
                           builder: (context, examState) {
                             int completedExams = 0;
@@ -105,8 +167,8 @@ class AcademicProgressCard extends StatelessWidget {
                                     valueColor: AlwaysStoppedAnimation<Color>(
                                       AppColors.primaryColor(context),
                                     ),
-                                    backgroundColor:
-                                        AppColors.primaryColor(context).withValues(alpha: 0.12),
+                                    backgroundColor: AppColors.primaryColor(context)
+                                        .withValues(alpha: 0.12),
                                   ),
                                 ),
                                 Text(
@@ -118,67 +180,6 @@ class AcademicProgressCard extends StatelessWidget {
                               ],
                             );
                           },
-                        ),
-
-                        // Right: Title & Stats Text
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.end,
-                            children: [
-                              Text(
-                                s.AcademicComprehensivePlan,
-                                style: TextStyles.bold18.copyWith(
-                                  color: AppColors.textBoldColor(context),
-                                ),
-                              ),
-                              const SizedBox(height: 8),
-
-                              // 3 Stats in a Row
-                              Row(
-                                mainAxisAlignment: MainAxisAlignment.end,
-                                children: [
-                                  _buildStatColumn(
-                                    context: context,
-                                    label: s.SuccessRate,
-                                    value: '88%',
-                                    valueColor: const Color(0xFFE11D48),
-                                  ),
-                                  const SizedBox(width: 16),
-                                  BlocBuilder<ExamsCubit, ExamsState>(
-                                    builder: (context, examState) {
-                                      int count = 4;
-                                      if (examState is ExamsSuccess) {
-                                        count = examState.exams
-                                            .where((e) => e.hasTaken)
-                                            .length;
-                                      }
-                                      return _buildStatColumn(
-                                        context: context,
-                                        label: s.CompletedExams,
-                                        value: '$count',
-                                        valueColor: const Color(0xFF10B981),
-                                      );
-                                    },
-                                  ),
-                                  const SizedBox(width: 16),
-                                  BlocBuilder<SubjectsCubit, SubjectsState>(
-                                    builder: (context, subState) {
-                                      int count = 6;
-                                      if (subState is SubjectsSuccess) {
-                                        count = subState.subjects.length;
-                                      }
-                                      return _buildStatColumn(
-                                        context: context,
-                                        label: s.ActiveSubjects,
-                                        value: '$count',
-                                        valueColor: AppColors.textBoldColor(context),
-                                      );
-                                    },
-                                  ),
-                                ],
-                              ),
-                            ],
-                          ),
                         ),
                       ],
                     ),
@@ -226,7 +227,7 @@ class AcademicProgressCard extends StatelessWidget {
     required Color valueColor,
   }) {
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.center,
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           label,
@@ -237,7 +238,7 @@ class AcademicProgressCard extends StatelessWidget {
         const SizedBox(height: 2),
         Text(
           value,
-          style: TextStyles.bold12.copyWith(
+          style: TextStyles.bold13.copyWith(
             color: valueColor,
           ),
         ),

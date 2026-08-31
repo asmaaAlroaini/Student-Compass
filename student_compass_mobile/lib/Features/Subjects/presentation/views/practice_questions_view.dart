@@ -9,6 +9,7 @@ import 'package:student_compass_mobile/core/utils/app_colors.dart';
 import 'package:student_compass_mobile/core/utils/app_text_style.dart';
 import 'package:student_compass_mobile/core/widgets/custom_app_bar.dart';
 import 'package:student_compass_mobile/core/widgets/custom_button.dart';
+import 'package:student_compass_mobile/core/widgets/report_question_dialog.dart';
 
 class PracticeQuestionsView extends StatefulWidget {
   final int lessonId;
@@ -231,27 +232,62 @@ class _PracticeQuestionsViewState extends State<PracticeQuestionsView> {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              if (currentQuestion.source != null) ...[
-                                Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 8,
-                                    vertical: 3,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: AppColors.primaryColor(
-                                      context,
-                                    ).withValues(alpha: 0.1),
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  if (currentQuestion.source != null)
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 8,
+                                        vertical: 3,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        color: AppColors.primaryColor(
+                                          context,
+                                        ).withValues(alpha: 0.1),
+                                        borderRadius: BorderRadius.circular(8),
+                                      ),
+                                      child: Text(
+                                        currentQuestion.source!,
+                                        style: TextStyles.semiBold10.copyWith(
+                                          color: AppColors.primaryColor(context),
+                                        ),
+                                      ),
+                                    )
+                                  else
+                                    const SizedBox.shrink(),
+                                  InkWell(
+                                    onTap: () {
+                                      ReportQuestionDialog.show(
+                                        context,
+                                        questionId: currentQuestion.id,
+                                      );
+                                    },
                                     borderRadius: BorderRadius.circular(8),
-                                  ),
-                                  child: Text(
-                                    currentQuestion.source!,
-                                    style: TextStyles.semiBold10.copyWith(
-                                      color: AppColors.primaryColor(context),
+                                    child: Padding(
+                                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                      child: Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          Icon(
+                                            Icons.flag_outlined,
+                                            size: 14,
+                                            color: AppColors.textSecondaryColor(context),
+                                          ),
+                                          const SizedBox(width: 4),
+                                          Text(
+                                            'إبلاغ عن خطأ',
+                                            style: TextStyles.regular10.copyWith(
+                                              color: AppColors.textSecondaryColor(context),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
                                     ),
                                   ),
-                                ),
-                                const SizedBox(height: 10),
-                              ],
+                                ],
+                              ),
+                              const SizedBox(height: 10),
                               Text(
                                 currentQuestion.questionText,
                                 style: TextStyles.bold16.copyWith(

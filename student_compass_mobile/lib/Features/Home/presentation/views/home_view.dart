@@ -6,6 +6,7 @@ import 'package:student_compass_mobile/Features/Home/presentation/views/widgets/
 import 'package:student_compass_mobile/Features/Home/presentation/views/widgets/home_banner_widget.dart';
 import 'package:student_compass_mobile/Features/Home/presentation/views/widgets/home_header_widget.dart';
 import 'package:student_compass_mobile/Features/Home/presentation/views/widgets/home_today_plan_widget.dart';
+import 'package:student_compass_mobile/Features/Home/presentation/views/widgets/home_study_plan_progress_widget.dart';
 import 'package:student_compass_mobile/Features/Home/presentation/views/widgets/quick_actions_grid.dart';
 import 'package:student_compass_mobile/Features/Notifications/presentation/logic/notifications_cubit/notifications_cubit.dart';
 import 'package:student_compass_mobile/Features/Profile/presentation/logic/profile_cubit/profile_cubit.dart';
@@ -198,6 +199,12 @@ class _HomeViewState extends State<HomeView> {
                     return const SizedBox.shrink();
                   },
                 ),
+
+                const SizedBox(height: AppSpacing.s20),
+
+                // 6. Study Plan Progress Section (Below Subjects)
+                const HomeStudyPlanProgressWidget(),
+
                 const SizedBox(height: AppSpacing.s20),
               ],
             ),

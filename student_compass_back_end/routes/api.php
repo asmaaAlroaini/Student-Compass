@@ -56,6 +56,7 @@ Route::prefix('v1')->group(function () {
         Route::prefix('auth')->group(function () {
             Route::get('/profile', [AuthController::class, 'profile']);
             Route::put('/profile', [AuthController::class, 'updateProfile']);
+            Route::post('/profile', [AuthController::class, 'updateProfile']);
             Route::put('/change-password', [AuthController::class, 'changePassword']);
             Route::get('/settings', [AuthController::class, 'getSettings']);
             Route::put('/settings', [AuthController::class, 'updateSettings']);

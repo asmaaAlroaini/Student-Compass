@@ -30,7 +30,7 @@ class EditProfileView extends StatelessWidget {
               context: context,
               title: S.of(context).ProfileUpdatedSuccessfully,
             );
-            context.read<ProfileCubit>().loadProfile();
+            context.read<ProfileCubit>().updateUser(state.user);
             Navigator.of(context).pop();
           } else if (state is UpdateProfileFailure) {
             CustomToastBar.showErrorToast(

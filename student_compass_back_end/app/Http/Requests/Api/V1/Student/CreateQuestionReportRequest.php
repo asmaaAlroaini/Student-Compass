@@ -15,8 +15,8 @@ class CreateQuestionReportRequest extends FormRequest
     {
         return [
             'question_id' => ['required', 'integer', 'exists:questions,id'],
-            'report_type' => ['required', 'string', 'in:typo,wrong_answer,unclear_image,other'],
-            'description' => ['required', 'string', 'min:5', 'max:1000'],
+            'report_type' => ['nullable', 'string', 'max:50'],
+            'description' => ['required', 'string', 'min:3', 'max:1000'],
         ];
     }
 

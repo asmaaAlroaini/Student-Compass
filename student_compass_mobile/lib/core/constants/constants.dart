@@ -2,8 +2,35 @@ import 'package:student_compass_mobile/core/services/shared_pref_singleton.dart'
 
 class AppConstants {
   static const String kIp = '192.168.43.11';
-  static String get ip => Prefs.getString(kApiBaseUrl) ?? kIp;
-  static String get kBaseUrl => 'http://$ip:8000/api/v1';
+  static String get ip {
+    final saved = Prefs.getString(kApiBaseUrl)?.trim();
+    if (saved == null || saved.isEmpty) {
+      return kIp;
+    }
+    return saved;
+  }
+
+  static String get kBaseUrl {
+    final currentIp = ip.trim();
+    if (currentIp.startsWith('http://') || currentIp.startsWith('https://')) {
+      var cleaned = currentIp;
+      while (cleaned.endsWith('/')) {
+        cleaned = cleaned.substring(0, cleaned.length - 1);
+      }
+      if (cleaned.endsWith('/api/v1')) {
+        return cleaned;
+      }
+      if (cleaned.endsWith('/api')) {
+        return '$cleaned/v1';
+      }
+      return '$cleaned/api/v1';
+    }
+    if (currentIp.contains(':')) {
+      return 'http://$currentIp/api/v1';
+    }
+    return 'http://$currentIp:8000/api/v1';
+  }
+
   static const String kAppName = 'بوصلة الطالب';
   static const String kAppVersion = '1.0.0';
   static const String kSeenOnBoarding = 'seenOnBoarding';

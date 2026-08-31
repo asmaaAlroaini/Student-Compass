@@ -9,11 +9,13 @@ import 'package:student_compass_mobile/core/constants/app_spacing.dart';
 import 'package:student_compass_mobile/core/errors/failuar.dart';
 import 'package:student_compass_mobile/core/helper/custom_loading_indicator.dart';
 import 'package:student_compass_mobile/core/helper/custom_toast_bar.dart';
+import 'package:student_compass_mobile/core/helper/file_downloader.dart';
 import 'package:student_compass_mobile/core/routers/route_names.dart';
 import 'package:student_compass_mobile/core/utils/app_colors.dart';
 import 'package:student_compass_mobile/core/utils/app_text_style.dart';
 import 'package:student_compass_mobile/core/widgets/custom_app_bar.dart';
 import 'package:student_compass_mobile/core/widgets/custom_button.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class LessonJourneyView extends StatefulWidget {
   final int lessonId;
@@ -470,6 +472,38 @@ class _LessonJourneyViewState extends State<LessonJourneyView> {
     }
   }
 
+  Future<void> _launchVideoUrl(String? videoUrl) async {
+    if (videoUrl == null || videoUrl.trim().isEmpty) {
+      customToastBar(
+        context: context,
+        message: 'لا يتوفر رابط فيديو لهذا الدرس حالياً.',
+        backgroundColor: AppColors.primaryColor(context),
+        icon: Icons.info_outline,
+        textColor: AppColors.white(),
+      );
+      return;
+    }
+
+    try {
+      final uri = Uri.parse(videoUrl.trim());
+      if (await canLaunchUrl(uri)) {
+        await launchUrl(uri, mode: LaunchMode.externalApplication);
+      } else {
+        await launchUrl(uri, mode: LaunchMode.platformDefault);
+      }
+    } catch (e) {
+      if (mounted) {
+        customToastBar(
+          context: context,
+          message: 'تعذر فتح رابط الفيديو: $e',
+          backgroundColor: AppColors.red(),
+          icon: Icons.error_outline,
+          textColor: AppColors.white(),
+        );
+      }
+    }
+  }
+
   void _openVideoStage(BuildContext context, LessonModel lesson) {
     showModalBottomSheet(
       context: context,
@@ -516,42 +550,49 @@ class _LessonJourneyViewState extends State<LessonJourneyView> {
               ],
             ),
             const SizedBox(height: 14),
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(AppSpacing.s16),
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [
-                    const Color(0xFF1E293B),
-                    const Color(0xFF0F172A),
-                  ],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
+            Material(
+              color: Colors.transparent,
+              child: InkWell(
+                onTap: () => _launchVideoUrl(lesson.videoUrl),
                 borderRadius: BorderRadius.circular(16),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.2),
-                    blurRadius: 10,
-                    offset: const Offset(0, 4),
+                child: Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(AppSpacing.s16),
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      colors: [
+                        Color(0xFF1E293B),
+                        Color(0xFF0F172A),
+                      ],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    borderRadius: BorderRadius.circular(16),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.2),
+                        blurRadius: 10,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
                   ),
-                ],
-              ),
-              child: Column(
-                children: [
-                  const Icon(Icons.smart_display_rounded, color: Colors.white, size: 52),
-                  const SizedBox(height: 10),
-                  Text(
-                    'شرح تفاعلي مرئي عالي الجودة',
-                    style: TextStyles.bold14.copyWith(color: Colors.white),
+                  child: Column(
+                    children: [
+                      const Icon(Icons.play_circle_filled_rounded, color: Color(0xFFEF4444), size: 56),
+                      const SizedBox(height: 10),
+                      Text(
+                        'اضغط هنا لمشاهدة فيديو الشرح ▶️',
+                        style: TextStyles.bold14.copyWith(color: Colors.white),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        lesson.videoUrl != null ? 'انقر لفتح الفيديو في تطبيق YouTube أو المتصفح' : 'شرح تفاعلي للدرس',
+                        style: TextStyles.regular12.copyWith(color: Colors.white70),
+                        textAlign: TextAlign.center,
+                      ),
+                    ],
                   ),
-                  const SizedBox(height: 4),
-                  Text(
-                    'يشمل استعراض التجارب العملية وحل المسائل خطوة بخطوة',
-                    style: TextStyles.regular12.copyWith(color: Colors.white70),
-                    textAlign: TextAlign.center,
-                  ),
-                ],
+                ),
               ),
             ),
             const SizedBox(height: 14),
@@ -581,6 +622,12 @@ class _LessonJourneyViewState extends State<LessonJourneyView> {
               onPressed: () {
                 Navigator.pop(ctx);
                 context.read<LessonJourneyCubit>().updateStage(lessonId: lesson.id, stage: 1);
+                // الانتقال التلقائي لمرحلة الملخص
+                Future.delayed(const Duration(milliseconds: 300), () {
+                  if (context.mounted) {
+                    _openSummaryStage(context, lesson);
+                  }
+                });
               },
             ),
             const SizedBox(height: 12),
@@ -684,28 +731,29 @@ class _LessonJourneyViewState extends State<LessonJourneyView> {
                           style: TextStyles.bold12.copyWith(color: AppColors.textBoldColor(context)),
                         ),
                         Text(
-                          'جاهز للمعاينة والقراءة السريعة',
+                          lesson.pdfPath != null
+                              ? 'جاهز للتنزيل والفتح على جهازك'
+                              : 'الملف متاح مع مادة الدرس',
                           style: TextStyles.regular10.copyWith(color: AppColors.textSecondaryColor(context)),
                         ),
                       ],
                     ),
                   ),
-                  ElevatedButton(
+                  ElevatedButton.icon(
                     onPressed: () {
-                      customToastBar(
+                      FileDownloader.downloadAndOpenPdf(
                         context: context,
-                        message: 'تم فتح وتحميل ملخص الـ PDF بنجاح 📄',
-                        backgroundColor: AppColors.primaryColor(context),
-                        icon: Icons.check,
-                        textColor: Colors.white,
+                        pdfPath: lesson.pdfPath,
+                        fileName: '${lesson.title}_ملخص',
                       );
                     },
+                    icon: const Icon(Icons.download_rounded, size: 16, color: Colors.white),
+                    label: const Text('تحميل وفتح', style: TextStyle(fontSize: 11, color: Colors.white)),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.primaryColor(context),
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                     ),
-                    child: const Text('تحميل PDF', style: TextStyle(fontSize: 11, color: Colors.white)),
                   ),
                 ],
               ),
@@ -716,6 +764,11 @@ class _LessonJourneyViewState extends State<LessonJourneyView> {
               onPressed: () {
                 Navigator.pop(ctx);
                 context.read<LessonJourneyCubit>().updateStage(lessonId: lesson.id, stage: 2);
+                Future.delayed(const Duration(milliseconds: 300), () {
+                  if (context.mounted) {
+                    _openPracticeQuestionsStage(context, lesson);
+                  }
+                });
               },
             ),
             const SizedBox(height: 12),
@@ -725,14 +778,16 @@ class _LessonJourneyViewState extends State<LessonJourneyView> {
     );
   }
 
-  void _openPracticeQuestionsStage(BuildContext context, LessonModel lesson) {
-    context.push(
+  void _openPracticeQuestionsStage(BuildContext ctx, LessonModel lesson) async {
+    await ctx.push(
       RouteNames.lessonQuestions,
       extra: {'lesson_id': lesson.id, 'title': lesson.title, 'lesson': lesson},
     );
+    if (!mounted) return;
+    context.read<LessonJourneyCubit>().fetchLessonDetails(lessonId: lesson.id);
   }
 
-  void _openShortExamStage(BuildContext context, LessonModel lesson) {
+  void _openShortExamStage(BuildContext ctx, LessonModel lesson) async {
     if (lesson.shortExam != null) {
       final exam = ExamModel(
         id: lesson.shortExam!['id'] as int? ?? 0,
@@ -740,17 +795,20 @@ class _LessonJourneyViewState extends State<LessonJourneyView> {
         durationMinutes: lesson.shortExam!['duration_minutes'] as int? ?? 15,
         totalMarks: lesson.shortExam!['total_marks'] as int? ?? 10,
       );
-      context.push(RouteNames.exam, extra: exam);
+      await ctx.push(RouteNames.exam, extra: exam);
     } else {
       customToastBar(
-        context: context,
+        context: ctx,
         message: 'يمكنك خوض أسئلة التثبيت الآن لقياس مدى فهمك للدرس.',
-        backgroundColor: AppColors.primaryColor(context),
+        backgroundColor: AppColors.primaryColor(ctx),
         icon: Icons.info_outline,
         textColor: AppColors.white(),
       );
-      _openPracticeQuestionsStage(context, lesson);
+      _openPracticeQuestionsStage(ctx, lesson);
+      return;
     }
+    if (!mounted) return;
+    context.read<LessonJourneyCubit>().fetchLessonDetails(lessonId: lesson.id);
   }
 
   void _openResultAnalysisStage(BuildContext context, LessonModel lesson) {

@@ -434,13 +434,20 @@ class _PracticeQuestionsViewState extends State<PracticeQuestionsView> {
                           title: _currentIndex < questions.length - 1
                               ? 'السؤال التالي ➡️'
                               : 'إنهاء التدريب ✔️',
-                          onPressed: () {
+                          onPressed: () async {
                             if (_currentIndex < questions.length - 1) {
                               setState(() {
                                 _currentIndex++;
                               });
                             } else {
-                              Navigator.pop(context);
+                              await context
+                                  .read<PracticeQuestionsCubit>()
+                                  .completePracticeStage(
+                                    lessonId: widget.lessonId,
+                                  );
+                              if (context.mounted) {
+                                Navigator.pop(context, true);
+                              }
                             }
                           },
                         ),

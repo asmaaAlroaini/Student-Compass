@@ -21,4 +21,8 @@ class PracticeQuestionsCubit extends Cubit<PracticeQuestionsState> {
       (questions) => emit(PracticeQuestionsSuccess(questions: questions)),
     );
   }
+
+  Future<void> completePracticeStage({required int lessonId}) async {
+    await subjectsRepo.updateLessonProgress(lessonId: lessonId, stage: 3);
+  }
 }

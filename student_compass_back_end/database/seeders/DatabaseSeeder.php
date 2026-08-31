@@ -21,6 +21,7 @@ class DatabaseSeeder extends Seeder
             NotificationSeeder::class,
             CompetitionSeeder::class,
             BookmarkSeeder::class,
+            StudentProgressSeeder::class,
         ]);
     }
 }

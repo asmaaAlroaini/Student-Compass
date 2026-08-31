@@ -72,6 +72,19 @@ class QuestionController extends Controller
         $validated = $request->validated();
         $validated['created_by'] = $request->user()->id;
 
+        // إسناد الدرس الأول من الوحدة في حال لم يتم تحديد درس معين
+        if (empty($validated['lesson_id']) && !empty($validated['unit_id'])) {
+            $firstLesson = Lesson::where('unit_id', $validated['unit_id'])->first();
+            if ($firstLesson) {
+                $validated['lesson_id'] = $firstLesson->id;
+            }
+        }
+
+        // معالجة الخيارات
+        if ($request->has('options') && is_array($request->input('options'))) {
+            $validated['options'] = array_values($request->input('options'));
+        }
+
         if ($request->hasFile('question_image_file')) {
             $validated['question_image'] = $request->file('question_image_file')->store('questions/images', 'public');
         }
@@ -81,23 +94,67 @@ class QuestionController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'تم إضافة السؤال إلى بنك الأسئلة بنجاح.',
-            'data' => $question,
+            'data' => $question->load(['subject:id,name', 'unit:id,title', 'lesson:id,title']),
         ], Response::HTTP_CREATED);
     }
 
     /**
-     * تحديث بيانات السؤال مع الفحص الذكي للصور
+     * تحديث بيانات السؤال مع الفحص الذكي للصور والتحقق من العلاقات
      */
     public function update(Request $request, int $id)
     {
         $question = Question::findOrFail($id);
-        $data = $request->all();
 
+        $validated = $request->validate([
+            'subject_id' => 'sometimes|nullable|integer|exists:subjects,id',
+            'unit_id' => 'sometimes|nullable|integer|exists:units,id',
+            'lesson_id' => 'sometimes|nullable|integer|exists:lessons,id',
+            'question_text' => 'sometimes|required|string|min:3',
+            'type' => 'sometimes|required|string|in:mcq,true_false,essay',
+            'options' => 'nullable',
+            'correct_answer' => 'sometimes|required|string',
+            'explanation' => 'nullable|string',
+            'difficulty' => 'sometimes|required|string|in:easy,medium,hard',
+            'year' => 'nullable|integer',
+            'source' => 'nullable|string|max:255',
+            'points' => 'sometimes|nullable|integer|min:1',
+            'is_active' => 'sometimes|boolean',
+        ], [
+            'subject_id.exists' => 'المادة الدراسية المحددة غير موجودة.',
+            'unit_id.exists' => 'الوحدة الدراسية المحددة غير موجودة.',
+            'lesson_id.exists' => 'الدرس المحدد غير موجود.',
+            'question_text.required' => 'نص السؤال مطلوب ولا يمكن تركه فارغاً.',
+            'question_text.min' => 'يجب أن يحتوي نص السؤال على 3 أحرف على الأقل.',
+            'correct_answer.required' => 'يرجى تحديد الإجابة الصحيحة.',
+        ]);
+
+        $data = $validated;
+
+        // تنظيف ومعالجة الحقول الصفرية أو غير الموجودة لمنع كسر قيود قاعدة البيانات
+        if (isset($data['subject_id']) && (int) $data['subject_id'] === 0) {
+            unset($data['subject_id']);
+        }
+        if (isset($data['unit_id']) && (int) $data['unit_id'] === 0) {
+            unset($data['unit_id']);
+        }
+        if (isset($data['lesson_id']) && (int) $data['lesson_id'] === 0) {
+            unset($data['lesson_id']);
+        }
+
+        // معالجة الخيارات
+        if ($request->has('options')) {
+            $rawOptions = $request->input('options');
+            if (is_array($rawOptions)) {
+                $data['options'] = array_values($rawOptions);
+            }
+        }
+
+        // معالجة رفع واستبدال الصورة
         $imageFile = $request->file('question_image_file');
         if ($imageFile) {
             $data['question_image'] = $this->fileStorageService->updateOrKeepFile($imageFile, $question->question_image, 'questions/images');
-        } else {
-            unset($data['question_image']);
+        } elseif ($request->has('question_image') && $request->input('question_image') === '') {
+            $data['question_image'] = null;
         }
 
         $updatedQuestion = $this->questionRepository->updateQuestion($id, $data);
@@ -105,7 +162,7 @@ class QuestionController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'تم تحديث بيانات السؤال بنجاح.',
-            'data' => $updatedQuestion,
+            'data' => $updatedQuestion->load(['subject:id,name', 'unit:id,title', 'lesson:id,title']),
         ]);
     }
 

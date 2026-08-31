@@ -14,6 +14,36 @@ class LessonController extends Controller
         private FileStorageService $fileStorageService
     ) {}
 
+    public function index(Request $request)
+    {
+        $query = Lesson::withCount('questions');
+
+        if ($request->filled('unit_id')) {
+            $query->where('unit_id', $request->input('unit_id'));
+        }
+
+        if ($request->filled('subject_id')) {
+            $query->where('subject_id', $request->input('subject_id'));
+        }
+
+        $lessons = $query->orderBy('order', 'asc')->orderBy('lesson_number', 'asc')->get();
+
+        return response()->json([
+            'success' => true,
+            'data' => $lessons,
+        ]);
+    }
+
+    public function show(int $id)
+    {
+        $lesson = Lesson::withCount('questions')->findOrFail($id);
+
+        return response()->json([
+            'success' => true,
+            'data' => $lesson,
+        ]);
+    }
+
     public function store(Request $request)
     {
         $request->validate([
@@ -85,6 +115,20 @@ class LessonController extends Controller
             'success' => true,
             'message' => 'تم تحديث بيانات الدرس والمحتويات بنجاح.',
             'data' => $lesson,
+        ]);
+    }
+
+    /**
+     * حذف درس ومحتوياته
+     */
+    public function destroy(int $id)
+    {
+        $lesson = Lesson::findOrFail($id);
+        $lesson->delete();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'تم حذف الدرس بنجاح.',
         ]);
     }
 }

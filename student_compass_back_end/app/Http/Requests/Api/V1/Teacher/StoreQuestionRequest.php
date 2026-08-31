@@ -16,7 +16,7 @@ class StoreQuestionRequest extends FormRequest
         return [
             'subject_id' => ['required', 'integer', 'exists:subjects,id'],
             'unit_id' => ['required', 'integer', 'exists:units,id'],
-            'lesson_id' => ['required', 'integer', 'exists:lessons,id'],
+            'lesson_id' => ['nullable', 'integer', 'exists:lessons,id'],
             'question_text' => ['required', 'string', 'min:3'],
             'question_image' => ['nullable', 'string', 'max:500'],
             'type' => ['required', 'string', 'in:mcq,true_false,essay'],

@@ -115,8 +115,11 @@ Route::prefix('v1')->group(function () {
         // --- ب) مسارات المعلمين والمشرفين (Teacher & Supervisor Endpoints) ---
         Route::middleware(['role:teacher,supervisor,admin'])->prefix('teacher')->group(function () {
             // إدارة وتحديث الدروس والملفات والـ PDFs
+            Route::get('/lessons', [TeacherLessonController::class, 'index']);
+            Route::get('/lessons/{lesson}', [TeacherLessonController::class, 'show']);
             Route::post('/lessons', [TeacherLessonController::class, 'store']);
             Route::post('/lessons/{lesson}', [TeacherLessonController::class, 'update']);
+            Route::delete('/lessons/{lesson}', [TeacherLessonController::class, 'destroy']);
 
             // إدارة الأسئلة الفردية والصور والفلترة والحذف
             Route::get('/questions', [TeacherQuestionController::class, 'index']);

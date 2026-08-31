@@ -13,16 +13,20 @@ import {
   Loader2,
   HelpCircle,
   Sparkles,
+  Plus,
+  X,
+  PlusCircle,
 } from 'lucide-react';
 import { examSchema, type ExamSchemaOutput } from '../validations/examSchema';
 import { useCreateExam, useUpdateExam, useExam } from '../hooks/useExams';
 import { useSubjects } from '@/features/subjects/hooks/useSubjects';
 import { useUnits } from '@/features/subjects/hooks/useUnits';
-import { useQuestions } from '@/features/questions/hooks/useQuestions';
+import { useQuestions, useCreateQuestion } from '@/features/questions/hooks/useQuestions';
 import { ROUTES } from '@/constants/routes';
 import type { ExamType } from '../types/exam.types';
 import type { Question } from '@/features/questions/types/question.types';
 import type { Unit } from '@/features/subjects/types/unit.types';
+import { toast } from 'sonner';
 
 interface SelectedQuestionEntry {
   question_id: number;
@@ -33,6 +37,316 @@ interface SelectedQuestionEntry {
   difficulty?: string;
 }
 
+// ── Direct Inline Question Creation Modal ──
+function DirectQuestionModal({
+  open,
+  subjectId,
+  unitId,
+  onClose,
+  onQuestionCreated,
+}: {
+  open: boolean;
+  subjectId: number;
+  unitId?: number;
+  onClose: () => void;
+  onQuestionCreated: (q: Question, marks: number) => void;
+}) {
+  const [text, setText] = useState('');
+  const [type, setType] = useState<'mcq' | 'true_false' | 'essay'>('mcq');
+  const [options, setOptions] = useState<string[]>(['', '', '', '']);
+  const [correctAnswer, setCorrectAnswer] = useState('');
+  const [marks, setMarks] = useState(2);
+  const [difficulty, setDifficulty] = useState<'easy' | 'medium' | 'hard'>('medium');
+  const [explanation, setExplanation] = useState('');
+
+  const { mutate: createQuestion, isPending } = useCreateQuestion();
+
+  if (!open) return null;
+
+  const handleOptionChange = (index: number, val: string) => {
+    const next = [...options];
+    next[index] = val;
+    setOptions(next);
+  };
+
+  const handleAddOption = () => {
+    setOptions([...options, '']);
+  };
+
+  const handleRemoveOption = (index: number) => {
+    if (options.length > 2) {
+      setOptions(options.filter((_, i) => i !== index));
+    }
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!text.trim()) {
+      toast.error('نص السؤال مطلوب.');
+      return;
+    }
+
+    if (!subjectId) {
+      toast.error('يرجى اختيار مادة الامتحان أولاً.');
+      return;
+    }
+
+    let finalAnswer = correctAnswer;
+    let finalOptions = options.filter((o) => o.trim() !== '');
+
+    if (type === 'true_false') {
+      finalOptions = ['صح', 'خطأ'];
+      if (!finalAnswer) finalAnswer = 'صح';
+    } else if (type === 'mcq') {
+      if (finalOptions.length < 2) {
+        toast.error('يجب كتابة خيارين على الأقل.');
+        return;
+      }
+      if (!finalAnswer) {
+        toast.error('يرجى تحديد الإجابة الصحيحة بالضغط على علامة الصح.');
+        return;
+      }
+    } else if (type === 'essay') {
+      if (!finalAnswer.trim()) {
+        finalAnswer = 'إجابة نموذجية';
+      }
+    }
+
+    const formData = new FormData();
+    formData.append('subject_id', String(subjectId));
+    if (unitId) formData.append('unit_id', String(unitId));
+    formData.append('question_text', text.trim());
+    formData.append('type', type);
+    formData.append('correct_answer', finalAnswer);
+    formData.append('difficulty', difficulty);
+    formData.append('points', String(marks));
+    if (explanation) formData.append('explanation', explanation);
+
+    finalOptions.forEach((opt, idx) => {
+      formData.append(`options[${idx}]`, opt);
+    });
+
+    createQuestion(formData, {
+      onSuccess: (res) => {
+        if (res?.data) {
+          onQuestionCreated(res.data, Number(marks) || 2);
+          toast.success('تم إنشاء السؤال وإضافته للامتحان مباشرة!');
+          onClose();
+        }
+      },
+    });
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" dir="rtl">
+      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
+      <div className="relative w-full max-w-lg bg-card text-card-foreground border border-border rounded-3xl shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+        
+        {/* Header */}
+        <div className="flex items-center justify-between px-6 py-4 border-b border-border bg-muted/30">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center text-primary">
+              <PlusCircle className="w-5 h-5" />
+            </div>
+            <div>
+              <h2 className="text-base font-bold text-foreground">
+                إضافة سؤال مباشر للاختبار
+              </h2>
+              <p className="text-xs text-muted-foreground">
+                إنشاء سؤال جديد وإدراجه مباشرة في قائمة أسئلة الاختبار
+              </p>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="p-2 rounded-xl text-muted-foreground hover:text-foreground hover:bg-muted transition cursor-pointer"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+
+        {/* Form Body */}
+        <form onSubmit={handleSubmit} className="p-6 space-y-4 max-h-[75vh] overflow-y-auto">
+          {/* Question Text */}
+          <div className="space-y-1.5">
+            <label className="text-xs font-semibold text-foreground">
+              نص السؤال <span className="text-destructive">*</span>
+            </label>
+            <textarea
+              required
+              rows={3}
+              value={text}
+              onChange={(e) => setText(e.target.value)}
+              placeholder="اكتب نص السؤال بدقة..."
+              className="w-full p-3 rounded-xl bg-background border border-input text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary transition resize-none"
+            />
+          </div>
+
+          {/* Type + Difficulty + Marks */}
+          <div className="grid grid-cols-3 gap-2.5">
+            <div className="space-y-1">
+              <label className="text-xs font-semibold text-foreground">النوع</label>
+              <select
+                value={type}
+                onChange={(e) => setType(e.target.value as any)}
+                className="w-full px-2.5 py-2 rounded-xl bg-background border border-input text-xs text-foreground focus:outline-none focus:border-primary cursor-pointer"
+              >
+                <option value="mcq">اختيار متعدد</option>
+                <option value="true_false">صح وخطأ</option>
+                <option value="essay">مقالي</option>
+              </select>
+            </div>
+
+            <div className="space-y-1">
+              <label className="text-xs font-semibold text-foreground">الصعوبة</label>
+              <select
+                value={difficulty}
+                onChange={(e) => setDifficulty(e.target.value as any)}
+                className="w-full px-2.5 py-2 rounded-xl bg-background border border-input text-xs text-foreground focus:outline-none focus:border-primary cursor-pointer"
+              >
+                <option value="easy">سهل</option>
+                <option value="medium">متوسط</option>
+                <option value="hard">صعب</option>
+              </select>
+            </div>
+
+            <div className="space-y-1">
+              <label className="text-xs font-semibold text-foreground">درجة السؤال</label>
+              <input
+                type="number"
+                min={1}
+                max={50}
+                value={marks}
+                onChange={(e) => setMarks(Number(e.target.value))}
+                className="w-full px-2.5 py-2 rounded-xl bg-background border border-input text-xs text-foreground focus:outline-none focus:border-primary text-center font-bold"
+              />
+            </div>
+          </div>
+
+          {/* MCQ Options */}
+          {type === 'mcq' && (
+            <div className="space-y-2 pt-1 border-t border-border/50">
+              <div className="flex items-center justify-between text-xs">
+                <span className="font-semibold text-foreground">الخيارات (انقر ✓ لتحديد الحل الصحيح):</span>
+                <button
+                  type="button"
+                  onClick={handleAddOption}
+                  className="text-primary hover:underline font-bold"
+                >
+                  + خيار
+                </button>
+              </div>
+
+              <div className="space-y-2">
+                {options.map((opt, i) => {
+                  const isCorrect = correctAnswer === opt && opt !== '';
+                  return (
+                    <div key={i} className="flex items-center gap-1.5">
+                      <button
+                        type="button"
+                        onClick={() => setCorrectAnswer(opt)}
+                        className={`p-2 rounded-lg border transition cursor-pointer ${
+                          isCorrect
+                            ? 'bg-emerald-500/20 border-emerald-500 text-emerald-600 dark:text-emerald-400 font-bold'
+                            : 'bg-muted border-border text-muted-foreground'
+                        }`}
+                        title="تحديد كإجابة صحيحة"
+                      >
+                        <CheckCircle2 className="w-3.5 h-3.5" />
+                      </button>
+                      <input
+                        type="text"
+                        value={opt}
+                        onChange={(e) => handleOptionChange(i, e.target.value)}
+                        placeholder={`الخيار ${i + 1}`}
+                        className={`flex-1 px-3 py-1.5 rounded-xl bg-background border text-xs text-foreground focus:outline-none ${
+                          isCorrect ? 'border-emerald-500 bg-emerald-500/[0.04]' : 'border-input focus:border-primary'
+                        }`}
+                      />
+                      {options.length > 2 && (
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveOption(i)}
+                          className="p-1.5 rounded-lg text-destructive hover:bg-destructive/10"
+                        >
+                          <Trash2 className="w-3 h-3" />
+                        </button>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* True / False */}
+          {type === 'true_false' && (
+            <div className="space-y-2 pt-1 border-t border-border/50">
+              <label className="text-xs font-semibold text-foreground">حدد الإجابة الصحيحة:</label>
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  type="button"
+                  onClick={() => setCorrectAnswer('صح')}
+                  className={`p-3 rounded-xl border text-xs font-bold transition cursor-pointer ${
+                    correctAnswer === 'صح' || !correctAnswer
+                      ? 'bg-emerald-500/20 border-emerald-500 text-emerald-600 dark:text-emerald-400 shadow'
+                      : 'bg-muted/40 border-border text-muted-foreground'
+                  }`}
+                >
+                  ✓ صواب (صح)
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setCorrectAnswer('خطأ')}
+                  className={`p-3 rounded-xl border text-xs font-bold transition cursor-pointer ${
+                    correctAnswer === 'خطأ'
+                      ? 'bg-destructive/20 border-destructive text-destructive shadow'
+                      : 'bg-muted/40 border-border text-muted-foreground'
+                  }`}
+                >
+                  ✗ خطأ
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Explanation */}
+          <div className="space-y-1">
+            <label className="text-xs font-semibold text-foreground">تفسير الإجابة (اختياري)</label>
+            <input
+              type="text"
+              value={explanation}
+              onChange={(e) => setExplanation(e.target.value)}
+              placeholder="تفسير علمي يظهر للطالب..."
+              className="w-full px-3 py-2 rounded-xl bg-background border border-input text-xs text-foreground focus:outline-none focus:border-primary"
+            />
+          </div>
+
+          {/* Submit */}
+          <div className="flex gap-2 pt-2">
+            <button
+              type="button"
+              onClick={onClose}
+              className="flex-1 py-2.5 rounded-xl bg-muted text-muted-foreground text-xs font-semibold"
+            >
+              إلغاء
+            </button>
+            <button
+              type="submit"
+              disabled={isPending}
+              className="flex-1 py-2.5 rounded-xl bg-primary hover:bg-primary-hover disabled:opacity-60 text-primary-foreground text-xs font-bold transition flex items-center justify-center gap-1.5 shadow"
+            >
+              {isPending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Plus className="w-3.5 h-3.5" />}
+              {isPending ? 'جاري الإنشاء...' : 'إضافة السؤال للامتحان'}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
 export default function ExamBuilderPage() {
   const { examId } = useParams<{ examId?: string }>();
   const isEdit = !!examId;
@@ -40,6 +354,7 @@ export default function ExamBuilderPage() {
 
   const [questionSearch, setQuestionSearch] = useState('');
   const [selectedQuestions, setSelectedQuestions] = useState<SelectedQuestionEntry[]>([]);
+  const [directQuestionModalOpen, setDirectQuestionModalOpen] = useState(false);
 
   // Queries
   const { data: examData, isLoading: isLoadingExam } = useExam(examId);
@@ -71,6 +386,7 @@ export default function ExamBuilderPage() {
   });
 
   const selectedSubjectId = watch('subject_id');
+  const selectedUnitId = watch('unit_id');
   const durationMinutes = watch('duration_minutes');
   const totalMarks = watch('total_marks');
   const isPublished = watch('is_published');
@@ -156,6 +472,21 @@ export default function ExamBuilderPage() {
     });
   };
 
+  // Add question created directly from modal
+  const handleDirectQuestionCreated = (q: Question, marks: number) => {
+    setSelectedQuestions((prev) => [
+      ...prev,
+      {
+        question_id: q.id,
+        marks: marks || 2,
+        order: prev.length + 1,
+        question_text: q.question_text,
+        type: q.type,
+        difficulty: q.difficulty,
+      },
+    ]);
+  };
+
   // Update marks for a specific question
   const handleUpdateMarks = (questionId: number, marks: number) => {
     setSelectedQuestions((prev) =>
@@ -216,7 +547,7 @@ export default function ExamBuilderPage() {
     <div className="space-y-6 max-w-6xl mx-auto" dir="rtl">
 
       {/* ── Header ── */}
-      <div className="flex items-center justify-between gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex items-center gap-3">
           <Link
             to={ROUTES.DASHBOARD.EXAMS}
@@ -229,7 +560,7 @@ export default function ExamBuilderPage() {
               {isEdit ? `تعديل الامتحان #${examId}` : 'منشئ ومصمم الامتحانات الذكي'}
             </h1>
             <p className="text-xs text-muted-foreground mt-0.5">
-              تحديد الخصائص، ربط الأسئلة من بنك الأسئلة، وتوزيع الدرجات التلقائي.
+              تحديد الخصائص، ربط الأسئلة من بنك الأسئلة أو إنشاؤها مباشرة، وتوزيع الدرجات التلقائي.
             </p>
           </div>
         </div>
@@ -252,14 +583,12 @@ export default function ExamBuilderPage() {
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
-          {/* ── Left Column / Basic Settings (1 col) ── */}
+          {/* ── Left Column / Exam Settings (1 col) ── */}
           <div className="space-y-5">
-
-            {/* Basic Info */}
             <div className="p-5 rounded-3xl bg-card text-card-foreground border border-border space-y-4 shadow-sm">
               <h2 className="text-xs font-bold text-foreground uppercase tracking-wider flex items-center gap-2">
                 <FileCheck2 className="w-4 h-4 text-primary" />
-                بيانات الامتحان الأساسية
+                بيانات وإعدادات الاختبار
               </h2>
 
               {/* Title */}
@@ -270,7 +599,7 @@ export default function ExamBuilderPage() {
                 <input
                   {...register('title')}
                   type="text"
-                  placeholder="مثال: الاختبار التجريبي الأول - الفيزياء 2025"
+                  placeholder="مثال: الاختبار الشامل لمادة الفيزياء — الفصل الأول"
                   className="w-full px-3.5 py-2.5 rounded-xl bg-background border border-input text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary transition"
                 />
                 {errors.title && (
@@ -449,7 +778,7 @@ export default function ExamBuilderPage() {
                 <div className="p-8 text-center border border-dashed border-border rounded-2xl text-muted-foreground text-xs space-y-2">
                   <HelpCircle className="w-8 h-8 mx-auto text-muted-foreground/40" />
                   <p>لم يتم اختيار أي أسئلة للاختبار بعد.</p>
-                  <p className="text-[11px] text-muted-foreground/70">اختر أسئلة من بنك الأسئلة بالأسفل لإضافتها.</p>
+                  <p className="text-[11px] text-muted-foreground/70">اختر أسئلة من بنك الأسئلة بالأسفل أو أضف سؤالاً مخصصاً ومباشراً.</p>
                 </div>
               ) : (
                 <div className="space-y-2 max-h-72 overflow-y-auto pr-1">
@@ -492,22 +821,43 @@ export default function ExamBuilderPage() {
               )}
             </div>
 
-            {/* Bank Question Picker */}
+            {/* Bank Question Picker + Direct Create Button */}
             <div className="p-5 rounded-3xl bg-card text-card-foreground border border-border space-y-4 shadow-sm">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                <h2 className="text-xs font-bold text-foreground uppercase tracking-wider flex items-center gap-2">
+                <div className="flex items-center gap-2">
                   <BookOpen className="w-4 h-4 text-primary" />
-                  اختيار من بنك الأسئلة
-                </h2>
-                <div className="relative max-w-xs">
-                  <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
-                  <input
-                    type="text"
-                    placeholder="بحث في بنك الأسئلة..."
-                    value={questionSearch}
-                    onChange={(e) => setQuestionSearch(e.target.value)}
-                    className="w-full pr-9 pl-3 py-1.5 rounded-xl bg-background border border-input text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary"
-                  />
+                  <h2 className="text-xs font-bold text-foreground uppercase tracking-wider">
+                    اختيار من بنك الأسئلة
+                  </h2>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  {/* Direct Add Question Button */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (!selectedSubjectId) {
+                        toast.error('يرجى تحديد مادة الامتحان أولاً.');
+                        return;
+                      }
+                      setDirectQuestionModalOpen(true);
+                    }}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 text-xs font-bold transition shadow-sm cursor-pointer"
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                    إضافة سؤال مخصص ومباشر
+                  </button>
+
+                  <div className="relative max-w-xs">
+                    <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
+                    <input
+                      type="text"
+                      placeholder="بحث في بنك الأسئلة..."
+                      value={questionSearch}
+                      onChange={(e) => setQuestionSearch(e.target.value)}
+                      className="w-full pr-9 pl-3 py-1.5 rounded-xl bg-background border border-input text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary"
+                    />
+                  </div>
                 </div>
               </div>
 
@@ -518,10 +868,12 @@ export default function ExamBuilderPage() {
                     <div key={idx} className="h-16 rounded-xl bg-muted animate-pulse" />
                   ))
                 ) : bankQuestions.length === 0 ? (
-                  <div className="p-8 text-center text-muted-foreground text-xs">
-                    {!selectedSubjectId
-                      ? 'اختر مادة دراسية أولاً لعرض الأسئلة المتاحة في بنك الأسئلة.'
-                      : 'لا توجد أسئلة متوفرة لهذه المادة. يمكنك إضافة أسئلة من قسم بنك الأسئلة.'}
+                  <div className="p-8 text-center text-muted-foreground text-xs space-y-2">
+                    <p>
+                      {!selectedSubjectId
+                        ? 'اختر مادة دراسية أولاً لعرض الأسئلة المتاحة في بنك الأسئلة.'
+                        : 'لا توجد أسئلة متوفرة لهذه المادة. يمكنك استخدام زر "إضافة سؤال مخصص ومباشر" أعلاه لإضافة سؤالك فوراً.'}
+                    </p>
                   </div>
                 ) : (
                   bankQuestions.map((q) => {
@@ -574,6 +926,15 @@ export default function ExamBuilderPage() {
 
         </div>
       </form>
+
+      {/* ── Direct Question Inline Modal ── */}
+      <DirectQuestionModal
+        open={directQuestionModalOpen}
+        subjectId={Number(selectedSubjectId) || 0}
+        unitId={selectedUnitId ? Number(selectedUnitId) : undefined}
+        onClose={() => setDirectQuestionModalOpen(false)}
+        onQuestionCreated={handleDirectQuestionCreated}
+      />
 
     </div>
   );

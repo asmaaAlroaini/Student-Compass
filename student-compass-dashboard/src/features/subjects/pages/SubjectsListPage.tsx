@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from 'react';
+import { Link } from 'react-router-dom';
 import {
   BookOpen,
   Plus,
@@ -24,6 +25,7 @@ import {
   useDeleteSubject,
 } from '../hooks/useSubjects';
 import { SubjectFormModal } from '../components/SubjectFormModal';
+import { SubjectIconBadge } from '../components/SubjectIconBadge';
 import type { Subject, SubjectFormData } from '../types/subject.types';
 import { useAcademicOptions } from '@/features/academic-structure/hooks/useAcademicStructure';
 
@@ -105,11 +107,14 @@ function SubjectRow({
       {/* Icon + Name */}
       <td className="px-4 py-3.5">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center text-lg shrink-0">
-            {subject.icon ?? '📘'}
-          </div>
-          <div>
-            <div className="text-sm font-bold text-foreground">{subject.name}</div>
+          <SubjectIconBadge icon={subject.icon} name={subject.name} size="md" />
+          <div className="min-w-0">
+            <Link
+              to={`/dashboard/subjects/${subject.id}`}
+              className="text-sm font-bold text-foreground hover:text-primary transition-colors block truncate"
+            >
+              {subject.name}
+            </Link>
             {subject.code && (
               <div className="text-[11px] text-muted-foreground font-mono mt-0.5">{subject.code}</div>
             )}
@@ -138,20 +143,24 @@ function SubjectRow({
 
       {/* Stats */}
       <td className="px-4 py-3.5 hidden lg:table-cell">
-        <div className="flex items-center gap-3 text-xs text-muted-foreground">
-          <span className="flex items-center gap-1">
+        <Link
+          to={`/dashboard/subjects/${subject.id}`}
+          className="flex items-center gap-3 text-xs text-muted-foreground hover:text-foreground transition-colors"
+          title="عرض وإدارة الوحدات والدروس"
+        >
+          <span className="flex items-center gap-1" title={`${subject.units_count ?? 0} وحدة`}>
             <Layers className="w-3.5 h-3.5 text-indigo-500" />
             {subject.units_count ?? 0}
           </span>
-          <span className="flex items-center gap-1">
+          <span className="flex items-center gap-1" title={`${subject.lessons_count ?? 0} درس`}>
             <BookMarked className="w-3.5 h-3.5 text-emerald-500" />
             {subject.lessons_count ?? 0}
           </span>
-          <span className="flex items-center gap-1">
+          <span className="flex items-center gap-1" title={`${subject.questions_count ?? 0} سؤال`}>
             <HelpCircle className="w-3.5 h-3.5 text-amber-500" />
             {subject.questions_count ?? 0}
           </span>
-        </div>
+        </Link>
       </td>
 
       {/* Status */}
@@ -171,12 +180,20 @@ function SubjectRow({
 
       {/* Actions */}
       <td className="px-4 py-3.5">
-        <div className="flex items-center justify-end gap-1.5 opacity-80 group-hover:opacity-100 transition-opacity">
+        <div className="flex items-center justify-end gap-1.5 opacity-90 group-hover:opacity-100 transition-opacity">
+          <Link
+            to={`/dashboard/subjects/${subject.id}`}
+            className="px-2.5 py-1.5 rounded-xl bg-primary/10 hover:bg-primary/20 text-primary border border-primary/20 text-xs font-bold transition-all flex items-center gap-1"
+            title="إدارة الوحدات والدروس"
+          >
+            <Layers className="w-3.5 h-3.5" />
+            <span className="hidden sm:inline">الوحدات والمنهج</span>
+          </Link>
           <button
             type="button"
             onClick={() => onEdit(subject)}
             className="p-2 rounded-xl bg-muted hover:bg-muted/80 text-foreground transition-all cursor-pointer"
-            title="تعديل"
+            title="تعديل المادة"
           >
             <Pencil className="w-3.5 h-3.5" />
           </button>
@@ -184,7 +201,7 @@ function SubjectRow({
             type="button"
             onClick={() => onDelete(subject)}
             className="p-2 rounded-xl bg-destructive/10 hover:bg-destructive/20 text-destructive transition-all cursor-pointer"
-            title="حذف"
+            title="حذف المادة"
           >
             <Trash2 className="w-3.5 h-3.5" />
           </button>

@@ -44,10 +44,28 @@ export function useUpdateLesson() {
     onSuccess: (res, variables) => {
       queryClient.invalidateQueries({ queryKey: ['lessons'] });
       queryClient.invalidateQueries({ queryKey: ['lesson', variables.id] });
+      queryClient.invalidateQueries({ queryKey: ['units'] });
       toast.success(res.message || 'تم تحديث بيانات الدرس والمحتويات بنجاح.');
     },
     onError: (err: any) => {
       const msg = err.response?.data?.message || 'تعذر تحديث الدرس.';
+      toast.error(msg);
+    },
+  });
+}
+
+export function useDeleteLesson() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (id: number | string) => lessonsApi.deleteLesson(id),
+    onSuccess: (res) => {
+      queryClient.invalidateQueries({ queryKey: ['lessons'] });
+      queryClient.invalidateQueries({ queryKey: ['units'] });
+      toast.success(res.message || 'تم حذف الدرس بنجاح.');
+    },
+    onError: (err: any) => {
+      const msg = err.response?.data?.message || 'تعذر حذف الدرس.';
       toast.error(msg);
     },
   });

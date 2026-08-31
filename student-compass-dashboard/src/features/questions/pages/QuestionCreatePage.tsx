@@ -13,15 +13,18 @@ import {
   Loader2,
   Sparkles,
   Layers,
-  BookOpen,
+  AlertTriangle,
+  Award,
 } from 'lucide-react';
 import { questionSchema, type QuestionSchemaOutput } from '../validations/questionSchema';
 import { useCreateQuestion, useUpdateQuestion, useQuestion } from '../hooks/useQuestions';
 import { useSubjects } from '@/features/subjects/hooks/useSubjects';
 import { useUnits } from '@/features/subjects/hooks/useUnits';
+import { useLessonsByUnit } from '@/features/subjects/hooks/useLessons';
 import type { Unit } from '@/features/subjects/types/unit.types';
 import { ROUTES } from '@/constants/routes';
 import type { QuestionType, QuestionDifficulty } from '../types/question.types';
+import { toast } from 'sonner';
 
 export default function QuestionCreatePage() {
   const { questionId } = useParams<{ questionId?: string }>();
@@ -43,6 +46,7 @@ export default function QuestionCreatePage() {
     handleSubmit,
     watch,
     setValue,
+    setError,
     reset,
     formState: { errors },
   } = useForm({
@@ -70,14 +74,21 @@ export default function QuestionCreatePage() {
   });
 
   const selectedSubjectId = watch('subject_id');
+  const selectedUnitId = watch('unit_id');
   const selectedType = watch('type');
   const selectedCorrectAnswer = watch('correct_answer');
   const currentQuestionText = watch('question_text');
   const currentDifficulty = watch('difficulty');
-  const currentOptions = watch('options');
 
   // Fetch units for selected subject
   const { data: units = [] } = useUnits(selectedSubjectId ? Number(selectedSubjectId) : undefined);
+
+  // Fetch lessons for selected unit
+  const { data: lessonsRes, isLoading: loadingLessons } = useLessonsByUnit(
+    selectedSubjectId ? Number(selectedSubjectId) : undefined,
+    selectedUnitId ? Number(selectedUnitId) : undefined
+  );
+  const availableLessons = lessonsRes?.data ?? [];
 
   // Set initial data when editing
   useEffect(() => {
@@ -138,7 +149,9 @@ export default function QuestionCreatePage() {
     const formData = new FormData();
     formData.append('subject_id', String(data.subject_id));
     formData.append('unit_id', String(data.unit_id));
-    formData.append('lesson_id', String(data.lesson_id));
+    if (data.lesson_id) {
+      formData.append('lesson_id', String(data.lesson_id));
+    }
     formData.append('question_text', data.question_text);
     formData.append('type', data.type);
     formData.append('correct_answer', data.correct_answer);
@@ -152,25 +165,55 @@ export default function QuestionCreatePage() {
       data.options.forEach((opt, idx) => {
         formData.append(`options[${idx}]`, opt.text);
       });
+    } else if (data.type === 'true_false') {
+      formData.append('options[0]', 'صح');
+      formData.append('options[1]', 'خطأ');
     }
 
     if (imageFile) {
       formData.append('question_image_file', imageFile);
     }
 
+    const handleError = (err: any) => {
+      const serverErrors = err.response?.data?.errors;
+      if (serverErrors) {
+        Object.keys(serverErrors).forEach((field) => {
+          const msgs = serverErrors[field];
+          const errorMsg = Array.isArray(msgs) ? msgs.join(' ') : String(msgs);
+          setError(field as any, {
+            type: 'server',
+            message: errorMsg,
+          });
+        });
+        toast.error('يرجى مراجعة الحقول المحددة باللون الأحمر وتصحيحها.');
+      }
+    };
+
     if (isEdit && questionId) {
       updateQuestion(
         { id: questionId, data: formData },
         {
           onSuccess: () => navigate(ROUTES.DASHBOARD.QUESTIONS),
+          onError: handleError,
         }
       );
     } else {
       createQuestion(formData, {
         onSuccess: () => navigate(ROUTES.DASHBOARD.QUESTIONS),
+        onError: handleError,
       });
     }
   };
+
+  const isTrueSelected =
+    selectedCorrectAnswer === 'صح' ||
+    selectedCorrectAnswer === 'true' ||
+    selectedCorrectAnswer === 'صواب';
+
+  const isFalseSelected =
+    selectedCorrectAnswer === 'خطأ' ||
+    selectedCorrectAnswer === 'false' ||
+    selectedCorrectAnswer === 'خطأ';
 
   if (isEdit && isLoadingQuestion) {
     return (
@@ -187,7 +230,7 @@ export default function QuestionCreatePage() {
     <div className="space-y-6 max-w-5xl mx-auto" dir="rtl">
 
       {/* ── Page Header ── */}
-      <div className="flex items-center justify-between gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex items-center gap-3">
           <Link
             to={ROUTES.DASHBOARD.QUESTIONS}
@@ -200,7 +243,7 @@ export default function QuestionCreatePage() {
               {isEdit ? `تعديل السؤال #${questionId}` : 'إضافة سؤال جديد إلى بنك الأسئلة'}
             </h1>
             <p className="text-xs text-muted-foreground mt-0.5">
-              قم بملء تفاصيل السؤال والخيارات والتفسير مع التحقق التلقائي من الحقول.
+              قم بملء تفاصيل السؤال والخيارات والتفسير مع التحقق التلقائي المباشر من صحة الحقول.
             </p>
           </div>
         </div>
@@ -241,7 +284,11 @@ export default function QuestionCreatePage() {
                   </label>
                   <select
                     {...register('subject_id')}
-                    className="w-full px-3 py-2.5 rounded-xl bg-background border border-input text-sm text-foreground focus:outline-none focus:border-primary transition cursor-pointer"
+                    className={`w-full px-3 py-2.5 rounded-xl bg-background border text-sm text-foreground focus:outline-none transition cursor-pointer ${
+                      errors.subject_id
+                        ? 'border-destructive ring-2 ring-destructive/20 focus:ring-destructive/30'
+                        : 'border-input focus:border-primary'
+                    }`}
                   >
                     <option value="0">— اختر المادة —</option>
                     {subjects.map((s) => (
@@ -251,7 +298,10 @@ export default function QuestionCreatePage() {
                     ))}
                   </select>
                   {errors.subject_id && (
-                    <p className="text-xs text-destructive">{errors.subject_id.message}</p>
+                    <p className="text-xs text-destructive flex items-center gap-1 font-medium mt-1">
+                      <AlertTriangle className="w-3.5 h-3.5" />
+                      {errors.subject_id.message}
+                    </p>
                   )}
                 </div>
 
@@ -263,7 +313,11 @@ export default function QuestionCreatePage() {
                   <select
                     {...register('unit_id')}
                     disabled={!selectedSubjectId}
-                    className="w-full px-3 py-2.5 rounded-xl bg-background border border-input text-sm text-foreground focus:outline-none focus:border-primary disabled:opacity-50 transition cursor-pointer"
+                    className={`w-full px-3 py-2.5 rounded-xl bg-background border text-sm text-foreground focus:outline-none disabled:opacity-50 transition cursor-pointer ${
+                      errors.unit_id
+                        ? 'border-destructive ring-2 ring-destructive/20 focus:ring-destructive/30'
+                        : 'border-input focus:border-primary'
+                    }`}
                   >
                     <option value="0">— اختر الوحدة —</option>
                     {units.map((u: Unit) => (
@@ -273,23 +327,45 @@ export default function QuestionCreatePage() {
                     ))}
                   </select>
                   {errors.unit_id && (
-                    <p className="text-xs text-destructive">{errors.unit_id.message}</p>
+                    <p className="text-xs text-destructive flex items-center gap-1 font-medium mt-1">
+                      <AlertTriangle className="w-3.5 h-3.5" />
+                      {errors.unit_id.message}
+                    </p>
                   )}
                 </div>
 
-                {/* Lesson */}
+                {/* Lesson Dropdown */}
                 <div className="space-y-1.5">
                   <label className="text-xs font-semibold text-foreground">
-                    الدرس <span className="text-destructive">*</span>
+                    الدرس التابع للوحدة <span className="text-destructive">*</span>
                   </label>
-                  <input
+                  <select
                     {...register('lesson_id')}
-                    type="number"
-                    placeholder="رقم الدرس (مثال: 1)"
-                    className="w-full px-3 py-2.5 rounded-xl bg-background border border-input text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary transition"
-                  />
+                    disabled={!selectedUnitId}
+                    className={`w-full px-3 py-2.5 rounded-xl bg-background border text-sm text-foreground focus:outline-none disabled:opacity-50 transition cursor-pointer ${
+                      errors.lesson_id
+                        ? 'border-destructive ring-2 ring-destructive/20 focus:ring-destructive/30'
+                        : 'border-input focus:border-primary'
+                    }`}
+                  >
+                    <option value="0">
+                      {loadingLessons
+                        ? 'جاري تحميل الدروس...'
+                        : availableLessons.length === 0
+                        ? '— درس عام / تلقائي —'
+                        : '— اختر الدرس —'}
+                    </option>
+                    {availableLessons.map((l) => (
+                      <option key={l.id} value={l.id}>
+                        {l.lesson_number ? `درس ${l.lesson_number}: ` : ''}{l.title}
+                      </option>
+                    ))}
+                  </select>
                   {errors.lesson_id && (
-                    <p className="text-xs text-destructive">{errors.lesson_id.message}</p>
+                    <p className="text-xs text-destructive flex items-center gap-1 font-medium mt-1">
+                      <AlertTriangle className="w-3.5 h-3.5" />
+                      {errors.lesson_id.message}
+                    </p>
                   )}
                 </div>
               </div>
@@ -310,11 +386,18 @@ export default function QuestionCreatePage() {
                 <textarea
                   {...register('question_text')}
                   rows={4}
-                  placeholder="اكتب نص السؤال بدقة هنا..."
-                  className="w-full p-4 rounded-xl bg-background border border-input text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary transition leading-relaxed resize-none"
+                  placeholder="اكتب نص السؤال بدقة ووضوح هنا..."
+                  className={`w-full p-4 rounded-xl bg-background border text-sm text-foreground placeholder:text-muted-foreground focus:outline-none transition leading-relaxed resize-none ${
+                    errors.question_text
+                      ? 'border-destructive ring-2 ring-destructive/20 focus:ring-destructive/30'
+                      : 'border-input focus:border-primary'
+                  }`}
                 />
                 {errors.question_text && (
-                  <p className="text-xs text-destructive">{errors.question_text.message}</p>
+                  <p className="text-xs text-destructive flex items-center gap-1 font-medium mt-1">
+                    <AlertTriangle className="w-3.5 h-3.5" />
+                    {errors.question_text.message}
+                  </p>
                 )}
               </div>
 
@@ -329,68 +412,44 @@ export default function QuestionCreatePage() {
                   <div className="relative inline-block border border-border rounded-2xl overflow-hidden p-2 bg-muted/30">
                     <img
                       src={imagePreview}
-                      alt="معاينة المرفق"
+                      alt="Question Preview"
                       className="max-h-48 rounded-xl object-contain"
                     />
                     <button
                       type="button"
                       onClick={removeImage}
-                      className="absolute top-4 left-4 p-1.5 rounded-lg bg-destructive hover:bg-destructive/90 text-destructive-foreground shadow-lg transition cursor-pointer"
-                      title="إزالة الصورة"
+                      className="absolute top-4 left-4 p-1.5 rounded-xl bg-destructive text-destructive-foreground hover:bg-destructive/90 transition shadow cursor-pointer"
+                      title="حذف الصورة"
                     >
                       <Trash2 className="w-4 h-4" />
                     </button>
                   </div>
                 ) : (
-                  <label className="flex flex-col items-center justify-center p-6 border-2 border-dashed border-border hover:border-primary/50 rounded-2xl bg-muted/20 hover:bg-muted/40 transition cursor-pointer">
-                    <ImageIcon className="w-8 h-8 text-muted-foreground mb-2" />
-                    <span className="text-xs font-semibold text-foreground">اضغط لرفع صورة السؤال</span>
-                    <span className="text-[11px] text-muted-foreground mt-1">PNG, JPG, WebP حتى 5MB</span>
+                  <div className="border border-dashed border-border rounded-2xl p-4 text-center hover:bg-muted/20 transition cursor-pointer relative">
                     <input
                       type="file"
                       accept="image/*"
                       onChange={handleImageChange}
-                      className="hidden"
+                      className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
                     />
-                  </label>
+                    <div className="flex flex-col items-center gap-1.5">
+                      <ImageIcon className="w-6 h-6 text-muted-foreground" />
+                      <span className="text-xs text-foreground font-semibold">اسحب الصورة هنا أو انقر للرفع</span>
+                      <span className="text-[11px] text-muted-foreground">PNG, JPG, WebP حتى 5 ميجابايت</span>
+                    </div>
+                  </div>
                 )}
               </div>
             </div>
 
-            {/* Question Type & Options */}
+            {/* Options / Answers Based on Type */}
             <div className="p-5 rounded-3xl bg-card text-card-foreground border border-border space-y-4 shadow-sm">
               <div className="flex items-center justify-between">
                 <h2 className="text-xs font-bold text-foreground uppercase tracking-wider flex items-center gap-2">
-                  <BookOpen className="w-4 h-4 text-emerald-500" />
-                  نوع السؤال والخيارات
+                  <CheckCircle2 className="w-4 h-4 text-emerald-500" />
+                  خيارات الإجابة وتحديد الحل الصحيح
                 </h2>
-
-                {/* Type pills */}
-                <div className="flex gap-1.5 p-1 rounded-xl bg-muted border border-border">
-                  {[
-                    { id: 'mcq', label: 'اختيار من متعدد' },
-                    { id: 'true_false', label: 'صح / خطأ' },
-                    { id: 'essay', label: 'مقالي' },
-                  ].map((t) => (
-                    <button
-                      key={t.id}
-                      type="button"
-                      onClick={() => {
-                        setValue('type', t.id as QuestionType);
-                        if (t.id === 'true_false') {
-                          setValue('correct_answer', 'true');
-                        }
-                      }}
-                      className={`px-3 py-1 rounded-lg text-xs font-semibold transition cursor-pointer ${
-                        selectedType === t.id
-                          ? 'bg-primary text-primary-foreground shadow'
-                          : 'text-muted-foreground hover:text-foreground'
-                      }`}
-                    >
-                      {t.label}
-                    </button>
-                  ))}
-                </div>
+                <span className="text-xs text-muted-foreground font-mono">نوع السؤال: {selectedType}</span>
               </div>
 
               {/* MCQ Options */}
@@ -398,7 +457,7 @@ export default function QuestionCreatePage() {
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
                     <span className="text-xs font-medium text-muted-foreground">
-                      أدخل الخيارات وحدد الإجابة الصحيحة بالضغط على علامة الصح:
+                      أدخل الخيارات وحدد الإجابة الصحيحة بالضغط على علامة الصح الخضراء:
                     </span>
                     <button
                       type="button"
@@ -421,7 +480,7 @@ export default function QuestionCreatePage() {
                             onClick={() => setValue('correct_answer', optionText || '')}
                             className={`p-2.5 rounded-xl border transition cursor-pointer shrink-0 ${
                               isCorrect
-                                ? 'bg-emerald-500/20 border-emerald-500 text-emerald-600 dark:text-emerald-400'
+                                ? 'bg-emerald-500/20 border-emerald-500 text-emerald-600 dark:text-emerald-400 font-bold'
                                 : 'bg-muted border-border text-muted-foreground hover:text-foreground'
                             }`}
                             title="تعيين كإجابة صحيحة"
@@ -436,10 +495,10 @@ export default function QuestionCreatePage() {
                             <input
                               {...register(`options.${idx}.text`)}
                               type="text"
-                              placeholder={`الخيار رقم ${idx + 1}`}
+                              placeholder={`نص الخيار رقم ${idx + 1}`}
                               className={`w-full pr-8 pl-4 py-2.5 rounded-xl bg-background border text-sm text-foreground placeholder:text-muted-foreground focus:outline-none transition ${
                                 isCorrect
-                                  ? 'border-emerald-500/50 bg-emerald-500/[0.03]'
+                                  ? 'border-emerald-500/60 bg-emerald-500/[0.04]'
                                   : 'border-input focus:border-primary'
                               }`}
                             />
@@ -461,10 +520,16 @@ export default function QuestionCreatePage() {
                   </div>
 
                   {errors.options && (
-                    <p className="text-xs text-destructive">{errors.options.message}</p>
+                    <p className="text-xs text-destructive flex items-center gap-1 font-medium mt-1">
+                      <AlertTriangle className="w-3.5 h-3.5" />
+                      {errors.options.message}
+                    </p>
                   )}
                   {errors.correct_answer && (
-                    <p className="text-xs text-destructive">{errors.correct_answer.message}</p>
+                    <p className="text-xs text-destructive flex items-center gap-1 font-medium mt-1">
+                      <AlertTriangle className="w-3.5 h-3.5" />
+                      {errors.correct_answer.message}
+                    </p>
                   )}
                 </div>
               )}
@@ -476,27 +541,33 @@ export default function QuestionCreatePage() {
                   <div className="grid grid-cols-2 gap-3">
                     <button
                       type="button"
-                      onClick={() => setValue('correct_answer', 'true')}
+                      onClick={() => setValue('correct_answer', 'صح')}
                       className={`p-4 rounded-2xl border text-center font-bold text-sm transition cursor-pointer ${
-                        selectedCorrectAnswer === 'true'
+                        isTrueSelected
                           ? 'bg-emerald-500/20 border-emerald-500 text-emerald-600 dark:text-emerald-400 shadow-lg shadow-emerald-500/10'
                           : 'bg-muted/40 border-border text-muted-foreground hover:text-foreground'
                       }`}
                     >
-                      ✓ صواب (True)
+                      ✓ صواب (صح)
                     </button>
                     <button
                       type="button"
-                      onClick={() => setValue('correct_answer', 'false')}
+                      onClick={() => setValue('correct_answer', 'خطأ')}
                       className={`p-4 rounded-2xl border text-center font-bold text-sm transition cursor-pointer ${
-                        selectedCorrectAnswer === 'false'
+                        isFalseSelected
                           ? 'bg-destructive/20 border-destructive text-destructive shadow-lg shadow-destructive/10'
                           : 'bg-muted/40 border-border text-muted-foreground hover:text-foreground'
                       }`}
                     >
-                      ✗ خطأ (False)
+                      ✗ خطأ
                     </button>
                   </div>
+                  {errors.correct_answer && (
+                    <p className="text-xs text-destructive flex items-center gap-1 font-medium mt-1">
+                      <AlertTriangle className="w-3.5 h-3.5" />
+                      {errors.correct_answer.message}
+                    </p>
+                  )}
                 </div>
               )}
 
@@ -511,7 +582,10 @@ export default function QuestionCreatePage() {
                     className="w-full p-3 rounded-xl bg-background border border-input text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary transition resize-none"
                   />
                   {errors.correct_answer && (
-                    <p className="text-xs text-destructive">{errors.correct_answer.message}</p>
+                    <p className="text-xs text-destructive flex items-center gap-1 font-medium mt-1">
+                      <AlertTriangle className="w-3.5 h-3.5" />
+                      {errors.correct_answer.message}
+                    </p>
                   )}
                 </div>
               )}
@@ -530,14 +604,26 @@ export default function QuestionCreatePage() {
                 className="w-full p-3.5 rounded-xl bg-background border border-input text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary transition leading-relaxed resize-none"
               />
             </div>
+
           </div>
 
-          {/* ── Right Sidebar / Settings & Preview (1 col) ── */}
+          {/* ── Right Sidebar / Question Properties ── */}
           <div className="space-y-5">
-
-            {/* Attributes & Metadata Card */}
             <div className="p-5 rounded-3xl bg-card text-card-foreground border border-border space-y-4 shadow-sm">
               <h2 className="text-xs font-bold text-foreground uppercase tracking-wider">خصائص السؤال</h2>
+
+              {/* Question Type */}
+              <div className="space-y-1.5">
+                <label className="text-xs font-semibold text-foreground">نوع السؤال</label>
+                <select
+                  {...register('type')}
+                  className="w-full px-3 py-2.5 rounded-xl bg-background border border-input text-sm text-foreground focus:outline-none focus:border-primary transition cursor-pointer"
+                >
+                  <option value="mcq">اختيار من متعدد (MCQ)</option>
+                  <option value="true_false">صح وخطأ (True/False)</option>
+                  <option value="essay">سؤال مقالي (Essay)</option>
+                </select>
+              </div>
 
               {/* Difficulty */}
               <div className="space-y-1.5">
@@ -554,13 +640,16 @@ export default function QuestionCreatePage() {
 
               {/* Points */}
               <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-foreground">درجة / نقاط السؤال</label>
+                <label className="text-xs font-semibold text-foreground flex items-center justify-between">
+                  <span>درجة / نقاط السؤال</span>
+                  <Award className="w-3.5 h-3.5 text-amber-500" />
+                </label>
                 <input
                   {...register('points')}
                   type="number"
                   min={1}
-                  max={50}
-                  className="w-full px-3 py-2.5 rounded-xl bg-background border border-input text-sm text-foreground focus:outline-none focus:border-primary transition"
+                  max={20}
+                  className="w-full px-3.5 py-2 rounded-xl bg-background border border-input text-sm text-foreground focus:outline-none focus:border-primary transition"
                 />
               </div>
 
@@ -570,8 +659,10 @@ export default function QuestionCreatePage() {
                 <input
                   {...register('year')}
                   type="number"
-                  placeholder="مثال: 2024"
-                  className="w-full px-3 py-2.5 rounded-xl bg-background border border-input text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary transition"
+                  placeholder="2024"
+                  min={2000}
+                  max={2030}
+                  className="w-full px-3.5 py-2 rounded-xl bg-background border border-input text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary transition"
                 />
               </div>
 
@@ -581,56 +672,26 @@ export default function QuestionCreatePage() {
                 <input
                   {...register('source')}
                   type="text"
-                  placeholder="مثال: النموذج الوزاري الأول 2024"
-                  className="w-full px-3 py-2.5 rounded-xl bg-background border border-input text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary transition"
+                  placeholder="مثال: امتحان وزاري 2024 الدور الأول"
+                  className="w-full px-3.5 py-2 rounded-xl bg-background border border-input text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary transition"
                 />
               </div>
             </div>
 
-            {/* Live Student Preview Card */}
-            <div className="p-5 rounded-3xl bg-card text-card-foreground border border-border space-y-4 shadow-sm">
-              <div className="flex items-center justify-between">
-                <h3 className="text-xs font-bold text-primary uppercase tracking-wider flex items-center gap-1.5">
-                  <Sparkles className="w-3.5 h-3.5" />
-                  معاينة مظهر الطالب
-                </h3>
-                <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-primary/10 text-primary">
+            {/* Preview Summary Box */}
+            <div className="p-5 rounded-3xl bg-muted/30 border border-border space-y-3">
+              <h3 className="text-xs font-bold text-foreground flex items-center gap-1.5">
+                <Sparkles className="w-3.5 h-3.5 text-primary" />
+                معاينة مظهر الطالب
+              </h3>
+              <p className="text-xs text-muted-foreground line-clamp-3">
+                {currentQuestionText || 'اكتب نص السؤال لمشاهدة المعاينة هنا...'}
+              </p>
+              <div className="flex items-center gap-2 pt-2 border-t border-border/50 text-[11px] text-muted-foreground">
+                <span className="px-2 py-0.5 rounded-md bg-background border border-border">
                   {currentDifficulty}
                 </span>
-              </div>
-
-              <div className="p-3.5 rounded-2xl bg-muted/30 border border-border space-y-3">
-                <p className="text-xs font-bold text-foreground leading-relaxed">
-                  {currentQuestionText || 'نص السؤال سيظهر هنا...'}
-                </p>
-
-                {imagePreview && (
-                  <img
-                    src={imagePreview}
-                    alt="معاينة"
-                    className="max-h-32 rounded-lg object-contain mx-auto"
-                  />
-                )}
-
-                {selectedType === 'mcq' && (
-                  <div className="space-y-1.5">
-                    {currentOptions?.map((opt, i) => (
-                      <div
-                        key={i}
-                        className={`p-2 rounded-lg text-[11px] border flex items-center justify-between ${
-                          opt.text === selectedCorrectAnswer && opt.text
-                            ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-700 dark:text-emerald-300 font-bold'
-                            : 'bg-background border-border text-muted-foreground'
-                        }`}
-                      >
-                        <span>{opt.text || `خيار ${i + 1}`}</span>
-                        {opt.text === selectedCorrectAnswer && opt.text && (
-                          <CheckCircle2 className="w-3 h-3 text-emerald-600 dark:text-emerald-400" />
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                )}
+                <span>{selectedType}</span>
               </div>
             </div>
 

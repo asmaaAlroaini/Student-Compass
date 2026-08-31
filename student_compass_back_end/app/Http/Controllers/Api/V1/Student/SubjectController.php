@@ -27,12 +27,16 @@ class SubjectController extends Controller
     public function index(Request $request)
     {
         $user = $request->user();
-        $gradeLevel = $request->query('grade_level', $user->grade_level ?? 'الثالث الثانوي');
-        $track = $request->query('track', $user->track);
+        $gradeLevel = $request->query('grade_level', $user?->grade_level ?? 'الثالث الثانوي');
+        $track = $request->query('track', $user?->track);
 
-        $subjects = Subject::query()
-            ->active()
-            ->forGrade($gradeLevel, $track)
+        $query = Subject::query()->active();
+
+        if ($gradeLevel && $gradeLevel !== 'all') {
+            $query->forGrade($gradeLevel, $track);
+        }
+
+        $subjects = $query
             ->withCount(['units', 'lessons', 'questions'])
             ->get();
 

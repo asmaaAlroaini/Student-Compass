@@ -11,13 +11,43 @@ class SubjectController extends Controller
 {
     public function index(Request $request)
     {
-        $subjects = Subject::withCount(['units', 'lessons', 'questions'])
-            ->orderBy('created_at', 'desc')
-            ->get();
+        $query = Subject::withCount(['units', 'lessons', 'questions']);
+
+        if ($request->filled('grade_level')) {
+            $query->where('grade_level', $request->input('grade_level'));
+        }
+
+        if ($request->filled('track')) {
+            $query->where('track', $request->input('track'));
+        }
+
+        if ($request->has('is_active')) {
+            $query->where('is_active', $request->boolean('is_active'));
+        }
+
+        if ($request->filled('search')) {
+            $search = $request->input('search');
+            $query->where(function ($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                  ->orWhere('code', 'like', "%{$search}%");
+            });
+        }
+
+        $subjects = $query->orderBy('created_at', 'desc')->get();
 
         return response()->json([
             'success' => true,
             'data' => $subjects,
+        ]);
+    }
+
+    public function show(int $id)
+    {
+        $subject = Subject::withCount(['units', 'lessons', 'questions'])->findOrFail($id);
+
+        return response()->json([
+            'success' => true,
+            'data' => $subject,
         ]);
     }
 

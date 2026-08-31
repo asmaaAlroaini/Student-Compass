@@ -20,14 +20,14 @@ class SubjectModel {
   });
 
   factory SubjectModel.fromJson(Map<String, dynamic> json) => SubjectModel(
-        id: json['id'] as int,
+        id: (json['id'] as num?)?.toInt() ?? 0,
         name: json['name'] as String? ?? '',
         code: json['code'] as String? ?? '',
         gradeLevel: json['grade_level'] as String? ?? '',
         track: json['track'] as String?,
         icon: json['icon'] as String?,
         isActive: json['is_active'] == 1 || json['is_active'] == true,
-        unitsCount: json['units_count'] as int? ?? 0,
+        unitsCount: (json['units_count'] as num?)?.toInt() ?? 0,
       );
 
   Map<String, dynamic> toJson() => {

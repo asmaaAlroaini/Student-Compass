@@ -44,7 +44,7 @@ class OnBoardingPageItem extends StatelessWidget {
                   ],
                 ),
               ),
-              Image.asset(image, height: 500, fit: BoxFit.cover),
+              Image.asset(image, height: 350, fit: BoxFit.fill),
             ],
           ),
 

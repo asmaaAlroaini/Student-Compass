@@ -18,13 +18,13 @@ class UnitModel {
   });
 
   factory UnitModel.fromJson(Map<String, dynamic> json) => UnitModel(
-        id: json['id'] as int,
-        subjectId: json['subject_id'] as int? ?? 0,
+        id: (json['id'] as num?)?.toInt() ?? 0,
+        subjectId: (json['subject_id'] as num?)?.toInt() ?? 0,
         title: json['title'] as String? ?? '',
-        unitNumber: json['unit_number'] as int? ?? 1,
-        order: json['order'] as int? ?? 0,
+        unitNumber: (json['unit_number'] as num?)?.toInt() ?? 1,
+        order: (json['order'] as num?)?.toInt() ?? 0,
         description: json['description'] as String?,
-        lessonsCount: json['lessons_count'] as int? ?? 0,
+        lessonsCount: (json['lessons_count'] as num?)?.toInt() ?? 0,
       );
 
   Map<String, dynamic> toJson() => {

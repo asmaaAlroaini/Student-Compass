@@ -5,14 +5,24 @@ import type { SubjectFormData } from '../types/subject.types';
 
 const QK = {
   all: ['subjects'] as const,
-  list: () => [...QK.all, 'list'] as const,
+  list: (params?: { grade_level?: string; track?: string; search?: string }) => [...QK.all, 'list', params] as const,
+  detail: (id?: number) => [...QK.all, 'detail', id] as const,
 };
 
-export function useSubjects() {
+export function useSubjects(params?: { grade_level?: string; track?: string; search?: string }) {
   return useQuery({
-    queryKey: QK.list(),
-    queryFn: () => subjectsApi.list(),
+    queryKey: QK.list(params),
+    queryFn: () => subjectsApi.list(params),
     select: (res) => res.data,
+  });
+}
+
+export function useSubject(id?: number) {
+  return useQuery({
+    queryKey: QK.detail(id),
+    queryFn: () => (id ? subjectsApi.get(id) : null),
+    enabled: typeof id === 'number' && id > 0,
+    select: (res) => res?.data,
   });
 }
 

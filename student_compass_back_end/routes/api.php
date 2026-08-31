@@ -148,42 +148,63 @@ Route::prefix('v1')->group(function () {
             Route::delete('/competitions/{id}', [TeacherCompetitionController::class, 'destroy']);
         });
 
-        // --- ج) مسارات الأدمن والإدارة العليا (Admin Endpoints) ---
-        Route::middleware(['role:admin'])->prefix('admin')->group(function () {
-            // لوحة إحصائيات المنصة الشاملة
-            Route::get('/dashboard', [AdminDashboardController::class, 'index']);
+        // --- ج) مسارات الأدمن والإدارة العليا (Admin & Management Endpoints) ---
+        Route::prefix('admin')->group(function () {
+            // 1. مسارات القراءة والاستعلام (Read-only endpoints for Admin, Supervisor, Teacher)
+            Route::middleware(['role:admin,supervisor,teacher'])->group(function () {
+                // لوحة إحصائيات المنصة الشاملة
+                Route::get('/dashboard', [AdminDashboardController::class, 'index']);
 
-            // إدارة المستخدمين والطلاب
-            Route::get('/users', [AdminUserController::class, 'index']);
-            Route::put('/users/{user}/status', [AdminUserController::class, 'updateStatus']);
+                // استعراض المواد والوحدات
+                Route::get('/subjects', [AdminSubjectController::class, 'index']);
+                Route::get('/subjects/{id}', [AdminSubjectController::class, 'show']);
+                Route::get('/units', [AdminUnitController::class, 'index']);
+                Route::get('/units/{id}', [AdminUnitController::class, 'show']);
 
-            // إدارة ومعالجة البلاغات والتحليلات
-            Route::get('/reports', [AdminReportController::class, 'index']);
-            Route::get('/reports/analytics', [AdminReportController::class, 'analytics']);
-            Route::put('/reports/{id}/resolve', [AdminReportController::class, 'resolve']);
+                // استعراض الصفوف والمراحل الدراسية
+                Route::get('/grade-levels', [AdminGradeLevelController::class, 'index']);
+                Route::get('/grade-levels/{id}/subjects', [AdminGradeLevelController::class, 'getSubjects']);
 
-            // بث وإدارة الإشعارات المركزية
-            Route::get('/notifications', [AdminNotificationManagementController::class, 'index']);
-            Route::post('/notifications', [AdminNotificationManagementController::class, 'store']);
+                // استعراض المستخدمين والطلاب
+                Route::get('/users', [AdminUserController::class, 'index']);
 
-            // إدارة المواد والوحدات (Subjects & Units CMS)
-            Route::get('/subjects', [AdminSubjectController::class, 'index']);
-            Route::post('/subjects', [AdminSubjectController::class, 'store']);
-            Route::put('/subjects/{id}', [AdminSubjectController::class, 'update']);
-            Route::delete('/subjects/{id}', [AdminSubjectController::class, 'destroy']);
+                // استعراض البلاغات والتحليلات
+                Route::get('/reports', [AdminReportController::class, 'index']);
+                Route::get('/reports/analytics', [AdminReportController::class, 'analytics']);
 
-            Route::get('/units', [AdminUnitController::class, 'index']);
-            Route::post('/units', [AdminUnitController::class, 'store']);
-            Route::put('/units/{id}', [AdminUnitController::class, 'update']);
-            Route::delete('/units/{id}', [AdminUnitController::class, 'destroy']);
+                // استعراض سجل الإشعارات
+                Route::get('/notifications', [AdminNotificationManagementController::class, 'index']);
+            });
 
-            // إدارة الصفوف والمراحل الدراسية وتعيين المواد (Grade Levels CMS)
-            Route::get('/grade-levels', [AdminGradeLevelController::class, 'index']);
-            Route::post('/grade-levels', [AdminGradeLevelController::class, 'store']);
-            Route::put('/grade-levels/{id}', [AdminGradeLevelController::class, 'update']);
-            Route::delete('/grade-levels/{id}', [AdminGradeLevelController::class, 'destroy']);
-            Route::get('/grade-levels/{id}/subjects', [AdminGradeLevelController::class, 'getSubjects']);
-            Route::post('/grade-levels/{id}/assign-subjects', [AdminGradeLevelController::class, 'assignSubjects']);
+            // 2. مسارات التعديل والإدارة للمشرفين والمدراء (Write/Mutate for Admin & Supervisor)
+            Route::middleware(['role:admin,supervisor'])->group(function () {
+                // إدارة ومعالجة البلاغات
+                Route::put('/reports/{id}/resolve', [AdminReportController::class, 'resolve']);
+
+                // بث وإرسال الإشعارات المركزية
+                Route::post('/notifications', [AdminNotificationManagementController::class, 'store']);
+
+                // إدارة المواد والوحدات (Subjects & Units CMS)
+                Route::post('/subjects', [AdminSubjectController::class, 'store']);
+                Route::put('/subjects/{id}', [AdminSubjectController::class, 'update']);
+                Route::delete('/subjects/{id}', [AdminSubjectController::class, 'destroy']);
+
+                Route::post('/units', [AdminUnitController::class, 'store']);
+                Route::put('/units/{id}', [AdminUnitController::class, 'update']);
+                Route::delete('/units/{id}', [AdminUnitController::class, 'destroy']);
+
+                // إدارة الصفوف والمراحل الدراسية
+                Route::post('/grade-levels', [AdminGradeLevelController::class, 'store']);
+                Route::put('/grade-levels/{id}', [AdminGradeLevelController::class, 'update']);
+                Route::delete('/grade-levels/{id}', [AdminGradeLevelController::class, 'destroy']);
+                Route::post('/grade-levels/{id}/assign-subjects', [AdminGradeLevelController::class, 'assignSubjects']);
+            });
+
+            // 3. مسارات خاصة بمدير النظام فقط (Super Admin Only)
+            Route::middleware(['role:admin'])->group(function () {
+                // تغيير حالة المستخدمين (تفعيل/تعطيل)
+                Route::put('/users/{user}/status', [AdminUserController::class, 'updateStatus']);
+            });
         });
 
     });

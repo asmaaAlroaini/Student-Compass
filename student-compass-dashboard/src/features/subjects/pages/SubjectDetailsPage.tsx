@@ -19,7 +19,7 @@ import {
   ChevronUp,
   Video,
 } from 'lucide-react';
-import { useSubjects } from '../hooks/useSubjects';
+import { useSubjects, useSubject } from '../hooks/useSubjects';
 import { useUnits, useCreateUnit, useUpdateUnit, useDeleteUnit } from '../hooks/useUnits';
 import { useLessonsByUnit, useDeleteLesson } from '../hooks/useLessons';
 import { unitSchema, type UnitSchemaOutput } from '../validations/unitSchema';
@@ -411,12 +411,13 @@ export default function SubjectDetailsPage() {
   const [deleteLessonTarget, setDeleteLessonTarget] = useState<Lesson | null>(null);
 
   // Queries
+  const { data: singleSubject, isLoading: isLoadingSingleSubject } = useSubject(numSubjectId);
   const { data: subjects = [], isLoading: isLoadingSubjects } = useSubjects();
   const { data: units = [], isLoading: isLoadingUnits } = useUnits(numSubjectId);
   const { mutate: deleteUnit, isPending: isDeletingUnit } = useDeleteUnit();
   const { mutate: deleteLesson, isPending: isDeletingLesson } = useDeleteLesson();
 
-  const currentSubject = subjects.find((s) => s.id === numSubjectId);
+  const currentSubject = singleSubject || subjects.find((s) => s.id === numSubjectId);
 
   const handleDeleteUnit = () => {
     if (!deleteUnitTarget) return;
@@ -444,7 +445,7 @@ export default function SubjectDetailsPage() {
     setLessonModalOpen(true);
   };
 
-  if (isLoadingSubjects) {
+  if ((isLoadingSubjects && !currentSubject) || (isLoadingSingleSubject && !currentSubject)) {
     return (
       <div className="min-h-[400px] flex items-center justify-center">
         <Loader2 className="w-8 h-8 text-primary animate-spin" />

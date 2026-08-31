@@ -25,6 +25,16 @@ class UnitController extends Controller
         ]);
     }
 
+    public function show(int $id)
+    {
+        $unit = Unit::with('subject:id,name')->withCount(['lessons', 'questions'])->findOrFail($id);
+
+        return response()->json([
+            'success' => true,
+            'data' => $unit,
+        ]);
+    }
+
     public function store(Request $request)
     {
         $validated = $request->validate([

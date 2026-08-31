@@ -13,10 +13,14 @@ class EducationalOptionsController extends Controller
      */
     public function index(): JsonResponse
     {
-        $gradeLevels = GradeLevel::query()
-            ->active()
-            ->ordered()
-            ->get();
+        try {
+            $gradeLevels = GradeLevel::query()
+                ->active()
+                ->ordered()
+                ->get();
+        } catch (\Throwable $e) {
+            $gradeLevels = collect();
+        }
 
         // في حال لم تكن قاعدة البيانات تحتوي على صفوف، نضمن إرجاع قيم افتراضية متوافقة
         if ($gradeLevels->isEmpty()) {

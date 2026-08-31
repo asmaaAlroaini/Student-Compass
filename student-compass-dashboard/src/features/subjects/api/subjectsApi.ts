@@ -9,8 +9,18 @@ const BASE = '/admin/subjects';
 
 export const subjectsApi = {
   /** GET /admin/subjects */
-  list: (): Promise<SubjectsListResponse> =>
-    fetchClient<SubjectsListResponse>(BASE),
+  list: (params?: { grade_level?: string; track?: string; search?: string }): Promise<SubjectsListResponse> => {
+    const sp = new URLSearchParams();
+    if (params?.grade_level) sp.append('grade_level', params.grade_level);
+    if (params?.track) sp.append('track', params.track);
+    if (params?.search) sp.append('search', params.search);
+    const q = sp.toString();
+    return fetchClient<SubjectsListResponse>(q ? `${BASE}?${q}` : BASE);
+  },
+
+  /** GET /admin/subjects/:id */
+  get: (id: number): Promise<SubjectResponse> =>
+    fetchClient<SubjectResponse>(`${BASE}/${id}`),
 
   /** POST /admin/subjects */
   create: (data: SubjectFormData): Promise<SubjectResponse> =>
